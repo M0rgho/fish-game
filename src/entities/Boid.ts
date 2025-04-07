@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { Shark } from './Shark';
 import { GameConfig } from '../config/GameConfig';
+import { PhysicsConfig } from '../config/PhysicsConfig';
 
 export class Boid {
     private image: Phaser.GameObjects.Image;
@@ -13,6 +14,7 @@ export class Boid {
     private isColliding: boolean = false;
     private collisionBox: Phaser.GameObjects.Rectangle;
     private config: GameConfig;
+    private physicsConfig: PhysicsConfig;
 
     private isAlive: boolean = true;
 
@@ -22,7 +24,7 @@ export class Boid {
     private static readonly SEPARATION_RADIUS = 25;
     private static readonly COLLISION_RADIUS = 20;
     private static readonly MIN_SIZE = 6;
-    private static readonly MAX_SIZE = 12;
+    private static readonly MAX_SIZE = 25;
     private static readonly MAX_SPEED = 2;
     private static readonly MAX_FORCE = 0.05;
     private static readonly COLLISION_FORCE = 0.5;
@@ -30,9 +32,16 @@ export class Boid {
     private static readonly SHARK_FORCE = 1.8; // Strong avoidance force for shark
     private static readonly BOID_DEATH_TIME = 5;
 
-    
+    // Add new properties
+    private static readonly GRAVITY = 0.2;
+    private static readonly WATER_SURFACE_HEIGHT = 500;
+    private static readonly WATER_RESISTANCE = 0.92;
+    private static readonly AIR_DRAG = 0.99; // Match shark's air drag
+    private isAboveWater: boolean = false;
+
     constructor(scene: Phaser.Scene, x: number, y: number) {
         this.config = GameConfig.getInstance();
+        this.physicsConfig = PhysicsConfig.getInstance();
         this.scene = scene;
         this.position = new Phaser.Math.Vector2(x, y);
         this.velocity = new Phaser.Math.Vector2(
@@ -43,19 +52,30 @@ export class Boid {
         this.size = Phaser.Math.Between(Boid.MIN_SIZE, Boid.MAX_SIZE);
 
         // Load fish sprite
-        this.image = scene.add.image(x, y, 'shark');
+        this.image = scene.add.image(x, y, 'fish');
         this.image.setScale(this.size / 360); // Adjust scale since SVG is 576x512
         this.image.setOrigin(0.5);
-        this.image.setTintFill(0x404040);
+        // Generate random bright RGB values between 128-255 for a bright color
+        const r = Phaser.Math.Between(80, 150);
+        const g = Phaser.Math.Between(80, 150); 
+        const b = Phaser.Math.Between(80, 150);
+        const color = Phaser.Display.Color.GetColor(r, g, b);
+        this.image.setTintFill(color);
+        this.image.setAlpha(0.9);
         
         // Create collision box
         this.collisionBox = scene.add.rectangle(x, y, this.size * 2, this.size);
         this.collisionBox.setStrokeStyle(1, 0x00ff00);
         this.collisionBox.setFillStyle(0x00ff00, 0.2);
         
-        // Use GameConfig for window dimensions
-        this.mapWidth = this.config.windowWidth;
-        this.mapHeight = this.config.windowHeight;
+        // Use GameConfig for world dimensions
+        this.mapWidth = this.config.worldWidth;
+        this.mapHeight = this.config.worldHeight;
+
+        // Add water surface graphics
+        if (!scene.data.get('waterSurface')) {
+            this.createWaterSurface();
+        }
     }
 
     private getNearbyBoids(radius: number): Boid[] {
@@ -184,6 +204,44 @@ export class Boid {
             shark.onFishEaten();
         }
     }
+
+    private createWaterSurface() {
+        const graphics = this.scene.add.graphics();
+        // Use config values
+        graphics.fillStyle(this.physicsConfig.WATER_COLOR, this.physicsConfig.WATER_ALPHA);
+        graphics.fillRect(0, this.physicsConfig.WATER_SURFACE_HEIGHT, this.mapWidth, this.mapHeight);
+        
+        // Create wobbling water line
+        const waterLine = this.scene.add.graphics();
+        waterLine.lineStyle(2, this.physicsConfig.WATER_LINE_COLOR);
+        
+        // Animate water line
+        this.scene.tweens.addCounter({
+            from: 0,
+            to: Math.PI * 2,
+            duration: 2000,
+            repeat: -1,
+            onUpdate: (tween) => {
+                waterLine.clear();
+                waterLine.lineStyle(2, this.physicsConfig.WATER_LINE_COLOR);
+                waterLine.beginPath();
+                
+                for (let x = 0; x < this.mapWidth; x += 5) {
+                    const y = this.physicsConfig.WATER_SURFACE_HEIGHT + 
+                        Math.sin(x * 0.02 + tween.getValue()) * 5;
+                    if (x === 0) {
+                        waterLine.moveTo(x, y);
+                    } else {
+                        waterLine.lineTo(x, y);
+                    }
+                }
+                waterLine.strokePath();
+            }
+        });
+
+        this.scene.data.set('waterSurface', true);
+    }
+
     update(shark: Shark): void {
         if (!this.isAlive) {
             // Apply friction to slow down dead fish
@@ -202,61 +260,54 @@ export class Boid {
                 this.destroy();
             }
         } else {
+            // Update water check to use config
+            this.isAboveWater = this.position.y < this.physicsConfig.WATER_SURFACE_HEIGHT;
 
+            if (this.isAboveWater) {
+                this.velocity.y += this.physicsConfig.GRAVITY;
+                this.velocity.x *= this.physicsConfig.AIR_DRAG;
+            } else {
+                if (this.velocity.y > 0) {
+                    this.velocity.y *= this.physicsConfig.WATER_RESISTANCE;
+                }
+                
+                // Normal flocking behavior
+                const alignmentBoids = this.getNearbyBoids(Boid.ALIGNMENT_RADIUS);
+                const cohesionBoids = this.getNearbyBoids(Boid.COHESION_RADIUS);
+                const separationBoids = this.getNearbyBoids(Boid.SEPARATION_RADIUS);
 
-        // Check collision with shark
-        this.checkSharkCollision(shark);
+                const alignment = this.align(alignmentBoids);
+                const cohesion = this.cohesion(cohesionBoids);
+                const separation = this.separation(separationBoids);
+                const collisionAvoidance = this.avoidCollisions();
+                const sharkAvoidance = this.avoidShark();
 
-        // Get nearby boids for flocking behavior
-        const alignmentBoids = this.getNearbyBoids(Boid.ALIGNMENT_RADIUS);
-        const cohesionBoids = this.getNearbyBoids(Boid.COHESION_RADIUS);
-        const separationBoids = this.getNearbyBoids(Boid.SEPARATION_RADIUS);
+                this.velocity.add(alignment);
+                this.velocity.add(cohesion);
+                this.velocity.add(separation.scale(1.5));
+                this.velocity.add(collisionAvoidance);
+                this.velocity.add(sharkAvoidance);
+            }
 
-        // Calculate steering forces
-        const alignment = this.align(alignmentBoids);
-        const cohesion = this.cohesion(cohesionBoids);
-        const separation = this.separation(separationBoids);
-        const collisionAvoidance = this.avoidCollisions();
-        const sharkAvoidance = this.avoidShark();
+            // Check collision with shark
+            this.checkSharkCollision(shark);
 
-        // Apply forces
-        this.velocity.add(alignment);
-        this.velocity.add(cohesion);
-        this.velocity.add(separation.scale(1.5)); // Increased separation weight
-        this.velocity.add(collisionAvoidance);
-        this.velocity.add(sharkAvoidance);
+            // Limit speed
+            this.velocity.limit(Boid.MAX_SPEED);
 
-        // Limit speed
-        this.velocity.limit(Boid.MAX_SPEED);
+            // Update position
+            this.position.add(this.velocity);
 
-        // Update position
-        this.position.add(this.velocity);
-
-        // Wrap around screen using map bounds
-        const margin = 50;
-        const turnForce = 0.5;
-        
-        if (this.position.x > this.mapWidth - margin) {
-            this.velocity.x -= turnForce;
+            // Wrap around world bounds
+            if (this.position.x > this.mapWidth) this.position.x = 0;
+            if (this.position.x < 0) this.position.x = this.mapWidth;
+            if (this.position.y > this.mapHeight) this.position.y = 0;
+            if (this.position.y < 0) this.position.y = this.mapHeight;
         }
-        if (this.position.x < margin) {
-            this.velocity.x += turnForce;
-        }
-        if (this.position.y > this.mapHeight - margin) {
-            this.velocity.y -= turnForce;
-        }
-        if (this.position.y < margin) {
-            this.velocity.y += turnForce;
-        }
-        
-        // Maintain constant speed
-        this.velocity.normalize().scale(Boid.MAX_SPEED);
-    
-    }
 
         // Update visual elements
         this.image.setPosition(this.position.x, this.position.y);
-        this.image.setRotation(Math.atan2(this.velocity.y, this.velocity.x) + Math.PI); // Add PI to point in direction of movement
+        this.image.setRotation(Math.atan2(this.velocity.y, this.velocity.x)); // Add PI to point in direction of movement
         
         // Update collision box
         this.collisionBox.setPosition(this.position.x, this.position.y);

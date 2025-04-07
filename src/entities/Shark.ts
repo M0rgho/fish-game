@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { GameConfig } from '../config/GameConfig';
+import { PhysicsConfig } from '../config/PhysicsConfig';
 
 export class Shark {
     private sprite: Phaser.GameObjects.Image;
@@ -15,6 +16,8 @@ export class Shark {
     private wobbleDirection: number = 1;
     private currentScale: number;
     private currentMaxSpeed: number;
+    private isAboveWater: boolean = false;
+    private physicsConfig: PhysicsConfig;
 
     // Shark-specific configuration
     private readonly INITIAL_SCALE = 0.1;
@@ -47,8 +50,8 @@ export class Shark {
         this.sprite.setScale(this.currentScale);
 
         // Initialize mouth box dimensions
-        this.mouthBoxWidth = this.sprite.width * 0.3 * this.currentScale;;
-        this.mouthBoxHeight = this.sprite.height * 0.5 * this.currentScale;;
+        this.mouthBoxWidth = this.sprite.width * 0.3 * this.currentScale;
+        this.mouthBoxHeight = this.sprite.height * 0.5 * this.currentScale;
         this.mouthBoxOffsetY = this.sprite.height * 0.9 * this.currentScale;
 
         // Create collision box with instance properties
@@ -63,6 +66,11 @@ export class Shark {
 
         // Initialize with some speed
         this.speed = this.MIN_SPEED;
+        this.physicsConfig = PhysicsConfig.getInstance();
+    }
+
+    getPosition(): Phaser.Math.Vector2 {
+        return this.position;
     }
 
     onFishEaten(): void {
@@ -74,32 +82,52 @@ export class Shark {
         this.currentMaxSpeed += this.SPEED_INCREASE;
         
         // Update mouth box size with growth
-        this.mouthBoxWidth = this.sprite.width * 0.3 * this.currentScale;;
-        this.mouthBoxHeight = this.sprite.height * 0.5 * this.currentScale;;
-        // this.mouthBoxOffsetY += this.GROWTH_RATE;
-        this.mouthBoxOffsetY = this.sprite.height * 0.9 *  this.currentScale;
+        this.mouthBoxWidth = this.sprite.width * 0.3 * this.currentScale;
+        this.mouthBoxHeight = this.sprite.height * 0.5 * this.currentScale;
+        this.mouthBoxOffsetY = this.sprite.height * 0.9 * this.currentScale;
 
         // Update collision box size
         this.collisionBox.setSize(this.mouthBoxWidth, this.mouthBoxHeight);
     }
 
     update(cursors: Phaser.Types.Input.Keyboard.CursorKeys): void {
-        // Natural wobbling movement using sine wave
-        this.wobbleTimer += this.scene.game.loop.delta;
-        const wobbleOffset = Math.sin((this.wobbleTimer / this.WOBBLE_PERIOD) * Math.PI * 2) * this.WOBBLE_AMPLITUDE;
-        this.targetAngle += wobbleOffset;
+        // Check if above water using shared config
+        this.isAboveWater = this.position.y < this.physicsConfig.WATER_SURFACE_HEIGHT;
 
-        // Player input
-        if (cursors.left.isDown) {
-            this.targetAngle -= this.ROTATION_SPEED;
-        }
-        if (cursors.right.isDown) {
-            this.targetAngle += this.ROTATION_SPEED;
-        }
-        if (cursors.up.isDown) {
-            this.speed = Math.min(this.speed + this.ACCELERATION, this.currentMaxSpeed);
+        if (this.isAboveWater) {
+            // Apply gravity when above water using shared config
+            this.velocity.y += this.physicsConfig.GRAVITY;
+            // Reduced air drag from shared config
+            this.velocity.x *= this.physicsConfig.AIR_DRAG;
+            
+            // Still allow rotation control in air
+            if (cursors.left.isDown) {
+                this.targetAngle -= this.ROTATION_SPEED;
+            }
+            if (cursors.right.isDown) {
+                this.targetAngle += this.ROTATION_SPEED;
+            }
+            
+            // Update position with gravity
+            this.position.y += this.velocity.y;
+            this.position.x += this.velocity.x;
         } else {
-            this.speed = Math.max(this.speed * this.FRICTION, this.MIN_SPEED);
+            // Apply water resistance when entering water using shared config
+            if (this.velocity.y > 0) {
+                this.velocity.y *= this.physicsConfig.WATER_RESISTANCE;
+            }
+
+            // Normal underwater movement
+            if (cursors.left.isDown) {
+                this.targetAngle -= this.ROTATION_SPEED;
+            }
+            if (cursors.right.isDown) {
+                this.targetAngle += this.ROTATION_SPEED;
+            }
+            if (cursors.up.isDown) {
+                this.velocity.x += Math.cos(this.targetAngle) * this.speed;
+                this.velocity.y += Math.sin(this.targetAngle) * this.speed;
+            }
         }
 
         // Smooth angle interpolation
@@ -111,17 +139,22 @@ export class Shark {
         this.velocity.y = Math.sin(this.angle) * this.speed;
         this.position.add(this.velocity);
 
-        // Wrap around screen
-        if (this.position.x < 0) this.position.x = this.config.windowWidth;
-        if (this.position.x > this.config.windowWidth) this.position.x = 0;
-        if (this.position.y < 0) this.position.y = this.config.windowHeight;
-        if (this.position.y > this.config.windowHeight) this.position.y = 0;
+        // Update position
+        this.position.add(this.velocity);
 
-        // Update sprite position and rotation
+        // Wrap around world bounds - but don't wrap vertically when above water
+        if (this.position.x > this.config.worldWidth) this.position.x = 0;
+        if (this.position.x < 0) this.position.x = this.config.worldWidth;
+        if (!this.isAboveWater) {
+            if (this.position.y > this.config.worldHeight) this.position.y = 0;
+            if (this.position.y < 0) this.position.y = this.config.worldHeight;
+        }
+
+        // Update visual elements
         this.sprite.setPosition(this.position.x, this.position.y);
         this.sprite.setRotation(this.angle + Math.PI);
-
-        // Update collision box with rotated offset
+        
+        // Update collision box
         this.collisionBox.setVisible(this.config.debug);
         const rotatedOffsetX = Math.cos(this.angle) * this.mouthBoxOffsetY;
         const rotatedOffsetY = Math.sin(this.angle) * this.mouthBoxOffsetY;
