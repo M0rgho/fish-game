@@ -20,7 +20,9 @@
     "homepage": "https://github.com/phaserjs/template-esbuild-ts#readme",
     "license": "MIT",
     "dependencies": {
-        "phaser": "^3.88.2"
+        "phaser": "^3.88.2",
+        "phaser-raycaster": "^0.10.11",
+        "simplex-noise": "^4.0.3"
     },
     "devDependencies": {
         "@jgoz/esbuild-plugin-livereload": "^2.0.5",

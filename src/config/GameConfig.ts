@@ -1,24 +1,24 @@
-export class GameConfig {
-    private static instance: GameConfig;
-    
-    public windowWidth = 800;
-    public windowHeight = 600;
-    public worldWidth = 4000;  // 5x larger than window
-    public worldHeight = 3000; // 5x larger than window
-    public debug = false;
-    public cameraLerpX = 0.1;  // Smooth camera follow (lower = smoother)
-    public cameraLerpY = 0.1;  // Smooth camera follow (lower = smoother)
+export const GameConfig = {
+    windowWidth: window.innerWidth,
+    windowHeight: window.innerHeight,
+    worldWidth: window.innerWidth * 4,
+    worldHeight: window.innerHeight * 2,
+    debug: false,
 
-    private constructor() {}
+    camera: {
+        lerpX: 0.1,
+        lerpY: 0.1
+    },
 
-    static getInstance(): GameConfig {
-        if (!GameConfig.instance) {
-            GameConfig.instance = new GameConfig();
-        }
-        return GameConfig.instance;
+    ground: {
+        baseHeight: 200,
+        quality: 40,
+        resolution: 0.001,
+        maxHeight: 200,
+        surfraceRoughness: 10,
+    },
+
+    surface: {
+        height: 500,
     }
-
-    toggleDebug(): void {
-        this.debug = !this.debug;
-    }
-} 
+}

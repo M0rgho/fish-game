@@ -1,20 +1,18 @@
 import Phaser from 'phaser';
 import { Shark } from './Shark';
 import { GameConfig } from '../config/GameConfig';
-import { PhysicsConfig } from '../config/PhysicsConfig';
+// import { PhysicsConfig } from '../config/PhysicsConfig';
 
 export class Boid {
-    private image: Phaser.GameObjects.Image;
-    private position: Phaser.Math.Vector2;
-    private velocity: Phaser.Math.Vector2;
+    
+    private sprite: Phaser.Physics.Arcade.Image;
     private size: number;
     private scene: Phaser.Scene;
-    private mapWidth: number;
-    private mapHeight: number;
-    private isColliding: boolean = false;
-    private collisionBox: Phaser.GameObjects.Rectangle;
-    private config: GameConfig;
-    private physicsConfig: PhysicsConfig;
+    private config: typeof GameConfig;
+    
+    // private isColliding: boolean = false;
+    // private collisionBox: Phaser.GameObjects.Rectangle;
+    // private physicsConfig: typeof PhysicsConfig;
 
     private isAlive: boolean = true;
 
@@ -23,7 +21,7 @@ export class Boid {
     private static readonly COHESION_RADIUS = 100;
     private static readonly SEPARATION_RADIUS = 25;
     private static readonly COLLISION_RADIUS = 20;
-    private static readonly MIN_SIZE = 6;
+    private static readonly MIN_SIZE = 10;
     private static readonly MAX_SIZE = 25;
     private static readonly MAX_SPEED = 2;
     private static readonly MAX_FORCE = 0.05;
@@ -40,42 +38,30 @@ export class Boid {
     private isAboveWater: boolean = false;
 
     constructor(scene: Phaser.Scene, x: number, y: number) {
-        this.config = GameConfig.getInstance();
-        this.physicsConfig = PhysicsConfig.getInstance();
+        this.config = GameConfig;
+        // this.physicsConfig = PhysicsConfig;
         this.scene = scene;
-        this.position = new Phaser.Math.Vector2(x, y);
-        this.velocity = new Phaser.Math.Vector2(
-            Phaser.Math.Between(-2, 2),
-            Phaser.Math.Between(-2, 2)
-        ).normalize().scale(Boid.MAX_SPEED);
-
         this.size = Phaser.Math.Between(Boid.MIN_SIZE, Boid.MAX_SIZE);
 
-        // Load fish sprite
-        this.image = scene.add.image(x, y, 'fish');
-        this.image.setScale(this.size / 360); // Adjust scale since SVG is 576x512
-        this.image.setOrigin(0.5);
+        // Load fish sprite and add physics
+        this.sprite = scene.physics.add.image(x, y, 'fish');
+        this.sprite.setScale(this.size / 360); // Adjust scale since SVG is 576x512
+        this.sprite.setOrigin(0.5);
         // Generate random bright RGB values between 128-255 for a bright color
         const r = Phaser.Math.Between(80, 150);
         const g = Phaser.Math.Between(80, 150); 
         const b = Phaser.Math.Between(80, 150);
         const color = Phaser.Display.Color.GetColor(r, g, b);
-        this.image.setTintFill(color);
-        this.image.setAlpha(0.9);
-        
-        // Create collision box
-        this.collisionBox = scene.add.rectangle(x, y, this.size * 2, this.size);
-        this.collisionBox.setStrokeStyle(1, 0x00ff00);
-        this.collisionBox.setFillStyle(0x00ff00, 0.2);
-        
-        // Use GameConfig for world dimensions
-        this.mapWidth = this.config.worldWidth;
-        this.mapHeight = this.config.worldHeight;
+        this.sprite.setTintFill(color);
+        this.sprite.setAlpha(0.9);
 
-        // Add water surface graphics
-        if (!scene.data.get('waterSurface')) {
-            this.createWaterSurface();
-        }
+        // Set up physics body
+        this.sprite.setCircle(this.sprite.width/2);
+        this.sprite.setBounce(1);
+        this.sprite.setVelocity(Phaser.Math.Between(-400, 400), Phaser.Math.Between(-400, 400));
+        
+        this.sprite.setCollideWorldBounds(true);
+        
     }
 
     private getNearbyBoids(radius: number): Boid[] {
@@ -190,61 +176,68 @@ export class Boid {
         return diff;
     }
 
-    private checkSharkCollision(shark: Shark): void {
-        const sharkBounds = shark.getCollisionBox().getBounds();
-        const boidBounds = this.collisionBox.getBounds();
+    // private checkSharkCollision(shark: Shark): void {
+    //     const sharkBounds = shark.getCollisionBox().getBounds();
+    //     const boidBounds = this.collisionBox.getBounds();
 
-        this.isColliding = Phaser.Geom.Intersects.RectangleToRectangle(boidBounds, sharkBounds);
-        if (this.isColliding && this.isAlive) {
-            this.image.setTintFill(0xff0000);
-            this.isAlive = false;
-            // Increment the counter in the Game scene
-            (this.scene as any).incrementEatenFishCounter();
-            // Make shark grow and speed up
-            shark.onFishEaten();
-        }
-    }
+    //     this.isColliding = Phaser.Geom.Intersects.RectangleToRectangle(boidBounds, sharkBounds);
+    //     if (this.isColliding && this.isAlive) {
+    //         this.image.setTintFill(0xff0000);
+    //         this.isAlive = false;
+    //         // Increment the counter in the Game scene
+    //         (this.scene as any).incrementEatenFishCounter();
+    //         // Make shark grow and speed up
+    //         shark.onFishEaten();
+    //     }
+    // }
 
-    private createWaterSurface() {
-        const graphics = this.scene.add.graphics();
-        // Use config values
-        graphics.fillStyle(this.physicsConfig.WATER_COLOR, this.physicsConfig.WATER_ALPHA);
-        graphics.fillRect(0, this.physicsConfig.WATER_SURFACE_HEIGHT, this.mapWidth, this.mapHeight);
+    // private createWaterSurface() {
+    //     const graphics = this.scene.add.graphics();
+    //     // Use config values
+    //     graphics.fillStyle(this.physicsConfig.WATER_COLOR, this.physicsConfig.WATER_ALPHA);
+    //     graphics.fillRect(0, this.physicsConfig.WATER_SURFACE_HEIGHT, this.mapWidth, this.mapHeight);
         
-        // Create wobbling water line
-        const waterLine = this.scene.add.graphics();
-        waterLine.lineStyle(2, this.physicsConfig.WATER_LINE_COLOR);
+    //     // Create wobbling water line
+    //     const waterLine = this.scene.add.graphics();
+    //     waterLine.lineStyle(2, this.physicsConfig.WATER_LINE_COLOR);
         
-        // Animate water line
-        this.scene.tweens.addCounter({
-            from: 0,
-            to: Math.PI * 2,
-            duration: 2000,
-            repeat: -1,
-            onUpdate: (tween) => {
-                waterLine.clear();
-                waterLine.lineStyle(2, this.physicsConfig.WATER_LINE_COLOR);
-                waterLine.beginPath();
+    //     // Animate water line
+    //     this.scene.tweens.addCounter({
+    //         from: 0,
+    //         to: Math.PI * 2,
+    //         duration: 2000,
+    //         repeat: -1,
+    //         onUpdate: (tween) => {
+    //             waterLine.clear();
+    //             waterLine.lineStyle(2, this.physicsConfig.WATER_LINE_COLOR);
+    //             waterLine.beginPath();
                 
-                for (let x = 0; x < this.mapWidth; x += 5) {
-                    const y = this.physicsConfig.WATER_SURFACE_HEIGHT + 
-                        Math.sin(x * 0.02 + tween.getValue()) * 5;
-                    if (x === 0) {
-                        waterLine.moveTo(x, y);
-                    } else {
-                        waterLine.lineTo(x, y);
-                    }
-                }
-                waterLine.strokePath();
-            }
-        });
+    //             for (let x = 0; x < this.mapWidth; x += 5) {
+    //                 const y = this.physicsConfig.WATER_SURFACE_HEIGHT + 
+    //                     Math.sin(x * 0.02 + tween.getValue()) * 5;
+    //                 if (x === 0) {
+    //                     waterLine.moveTo(x, y);
+    //                 } else {
+    //                     waterLine.lineTo(x, y);
+    //                 }
+    //             }
+    //             waterLine.strokePath();
+    //         }
+    //     });
 
-        this.scene.data.set('waterSurface', true);
-    }
+    //     this.scene.data.set('waterSurface', true);
+    // }
 
     update(shark: Shark): void {
+
+        // Set angular velocity based on velocity direction
+        const angle = Math.atan2(this.sprite.body.velocity.y, this.sprite.body.velocity.x);
+        this.sprite.setRotation(angle);
+        return;
+
+
         if (!this.isAlive) {
-            // Apply friction to slow down dead fish
+        // Apply friction to slow down dead fish
             const friction = 0.98;
             this.velocity.scale(friction);
             
@@ -252,10 +245,10 @@ export class Boid {
             this.position.add(this.velocity);
             // Gradually fade out over 10 seconds
             const fadeRate = 1 / (Boid.BOID_DEATH_TIME * 60); // 10 seconds * 60 fps
-            this.image.setAlpha(Math.max(0, this.image.alpha - fadeRate));
+            this.sprite.setAlpha(Math.max(0, this.sprite.alpha - fadeRate));
             
             // Once fully faded, destroy the boid
-            if (this.image.alpha <= 0) {
+            if (this.sprite.alpha <= 0) {
                 // Remove this boid from the scene and array
                 this.destroy();
             }
@@ -306,22 +299,24 @@ export class Boid {
         }
 
         // Update visual elements
-        this.image.setPosition(this.position.x, this.position.y);
-        this.image.setRotation(Math.atan2(this.velocity.y, this.velocity.x)); // Add PI to point in direction of movement
+        this.sprite.setPosition(this.position.x, this.position.y);
+        this.sprite.setRotation(Math.atan2(this.velocity.y, this.velocity.x)); // Add PI to point in direction of movement
         
         // Update collision box
-        this.collisionBox.setPosition(this.position.x, this.position.y);
-        this.collisionBox.setRotation(Math.atan2(this.velocity.y, this.velocity.x));
-        this.collisionBox.setVisible(this.config.debug);
+        // this.collisionBox.setPosition(this.position.x, this.position.y);
+        // this.collisionBox.setRotation(Math.atan2(this.velocity.y, this.velocity.x));
+        // this.collisionBox.setVisible(this.config.debug);
     }
 
-    destroy() {
-        this.image.destroy();
-        this.collisionBox.destroy();
-        const boidIndex = (this.scene as any).boids.indexOf(this);
-        if (boidIndex > -1) {
-            (this.scene as any).boids.splice(boidIndex, 1);
-        }
+    // destroy() {
+    //     this.image.destroy();
+    //     this.collisionBox.destroy();
+    //     const boidIndex = (this.scene as any).boids.indexOf(this);
+    //     if (boidIndex > -1) {
+    //         (this.scene as any).boids.splice(boidIndex, 1);
+    //     }
+    // }
+    getSprite(): Phaser.Types.Physics.Arcade.ArcadeColliderType {
+        return this.sprite;
     }
-
 }
