@@ -89,6 +89,14 @@ export class BoidManager {
   }
 
   update(): void {
+    // Check if we need to spawn more boids
+    if (this.boids.length < this.config.boids.count) {
+      const x = Phaser.Math.Between(30, this.config.worldWidth - 30);
+      const boid = new Boid(this.scene, x, 10, this.boidGroup);
+
+      this.boids.push(boid);
+      this.boidGroup.add(boid.getSprite());
+    }
     // Update quadTree with current boid positions
     this.quadTree.clear();
     for (const boid of this.boids) {

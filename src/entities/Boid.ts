@@ -17,7 +17,7 @@ export class Boid {
   private static readonly COHESION_RADIUS = 100;
   private static readonly SEPARATION_RADIUS = 50;
   private static readonly COLLISION_RADIUS = 50;
-  private static readonly MIN_SIZE = 10;
+  private static readonly MIN_SIZE = 12;
   private static readonly MAX_SIZE = 20;
   private static readonly MAX_SPEED = 300;
   private static readonly MAX_FORCE = 0.5;
