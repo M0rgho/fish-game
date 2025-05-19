@@ -58,6 +58,8 @@ export class BoidManager {
         if (boid && !this.dyingBoids.has(boid)) {
           boid.dieAnimation();
           this.dyingBoids.add(boid);
+          // Call onFishEaten to increase shark size and turbo capacity
+          this.scene.shark.onFishEaten();
           // Schedule removal after death animation
           this.scene.time.delayedCall(1500, () => {
             const sprite = boid.getSprite() as Phaser.Physics.Arcade.Image;

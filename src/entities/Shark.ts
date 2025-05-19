@@ -17,12 +17,18 @@ export class Shark {
   private readonly TURN_SPEED = 0.03; // Speed at which velocity vector rotates
   private readonly ACCELERATION_SPEED = 5;
   private readonly TURN_SPEED_LOSS = 0.35; // Speed loss factor during turns
+  private readonly SCALE_INCREASE_PER_FISH = 0.0002; // How much to increase scale by per fish eaten
+  private readonly MAX_SCALE = 0.3; // Maximum scale the shark can reach
 
   // Turbo configuration
   private readonly TURBO_MULTIPLIER = 3;
   private readonly TURBO_DEPLETION_RATE = 0.5;
   private readonly TURBO_RECHARGE_RATE = 0.15;
-  private turboMeter: number = 100;
+  private readonly INITIAL_TURBO_CAPACITY = 50;
+  private readonly TURBO_CAPACITY_INCREASE = 0.3;
+  private readonly MAX_TURBO_CAPACITY = 200;
+  private turboMeter: number = 50; // Start with 50% turbo
+  private turboCapacity: number = 50; // Start with 50% capacity
   private isTurboActive: boolean = false;
   private turboBar: Phaser.GameObjects.Graphics;
 
@@ -64,10 +70,13 @@ export class Shark {
   }
 
   private updateTurboMeter(): void {
-    const width = 200;
+    const baseWidth = 50;
     const height = 20;
-    const x = this.scene.cameras.main.width - 20;
+    const x = this.scene.cameras.main.width - 20; // Keep right edge fixed
     const y = this.scene.cameras.main.height - 30; // Position below the counter
+
+    // Scale the width based on turbo capacity
+    const width = baseWidth * (this.turboCapacity / this.INITIAL_TURBO_CAPACITY);
 
     this.turboBar.clear();
 
@@ -77,7 +86,7 @@ export class Shark {
 
     // Turbo meter
     this.turboBar.fillStyle(0x00ff00, 1);
-    this.turboBar.fillRect(x - width, y, width * (this.turboMeter / 100), height);
+    this.turboBar.fillRect(x - width, y, width * (this.turboMeter / this.turboCapacity), height);
 
     // Border
     this.turboBar.lineStyle(2, 0xffffff, 1);
@@ -102,7 +111,7 @@ export class Shark {
       frequency: 1,
       follow: this.sprite,
       rotate: this.sprite.rotation,
-      angle: { min: -5, max: 5 },
+      angle: { min: -15, max: 15 },
       emitZone: {
         type: 'edge',
         source: new Phaser.Geom.Circle(0, 0, 15),
@@ -126,9 +135,14 @@ export class Shark {
     this.speedParticleEmitter.setConfig({
       quantity,
       speed: { min: minSpeed, max: maxSpeed },
-      angle: { min: -10 * (1 - speedRatio * 0.8), max: 10 * (1 - speedRatio * 0.8) },
+      angle: { min: -20 * (1 - speedRatio * 0.8), max: 20 * (1 - speedRatio * 0.8) },
       alpha: { start: 0.8, end: 0 },
       scale: { start: 20 * this.currentScale, end: 2 * this.currentScale },
+      emitZone: {
+        type: 'random',
+        source: new Phaser.Geom.Circle(0, 0, 150 * this.currentScale),
+        quantity: 1,
+      },
     });
   }
 
@@ -163,7 +177,7 @@ export class Shark {
       this.updateSpeedLines();
     } else {
       this.isTurboActive = false;
-      this.turboMeter = Math.min(100, this.turboMeter + this.TURBO_RECHARGE_RATE);
+      this.turboMeter = Math.min(this.turboCapacity, this.turboMeter + this.TURBO_RECHARGE_RATE);
       this.speedParticleEmitter.stop();
     }
 
@@ -240,5 +254,25 @@ export class Shark {
 
   getSprite(): Phaser.Physics.Arcade.Image {
     return this.sprite;
+  }
+
+  onFishEaten(): void {
+    // Increase shark size
+    this.currentScale = Math.min(this.currentScale + this.SCALE_INCREASE_PER_FISH, this.MAX_SCALE);
+    this.sprite.setScale(this.currentScale);
+
+    // Update physics body size
+    const circleRadius = this.sprite.height * 0.9;
+    this.sprite.body.setCircle(
+      circleRadius,
+      this.sprite.width * 0.5 - circleRadius,
+      this.sprite.height * 0.5 - circleRadius
+    );
+
+    // Increase turbo capacity
+    this.turboCapacity = Math.min(
+      this.turboCapacity + this.TURBO_CAPACITY_INCREASE,
+      this.MAX_TURBO_CAPACITY
+    );
   }
 }
