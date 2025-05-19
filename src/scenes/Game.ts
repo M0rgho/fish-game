@@ -45,6 +45,13 @@ export class FishGame extends Scene {
     this.load.image('shark', 'assets/shark_silhouette.svg');
     this.load.image('fish', 'assets/fish.svg');
     this.load.image('clown_fish', 'assets/clown_fish.svg');
+
+    // Create a circle texture for speed lines
+    const graphics = this.make.graphics();
+    graphics.fillStyle(0xffffff, 1);
+    graphics.fillCircle(4, 4, 4);
+    graphics.generateTexture('speed_line', 4, 4);
+    graphics.destroy();
   }
 
   create() {
@@ -63,7 +70,7 @@ export class FishGame extends Scene {
     this.environment = new Environment(this, this.config);
 
     // // Create shark
-    this.shark = new Shark(this, 100, this.config.surface.height + 100);
+    this.shark = new Shark(this, 300, this.config.surface.height + 100);
     this.shark.getSprite().setDepth(1.1);
 
     this.camera.startFollow(

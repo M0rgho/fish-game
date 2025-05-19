@@ -23,7 +23,7 @@ export const GameConfig = {
   },
 
   boids: {
-    count: 1500,
+    count: 1000,
     minSize: 10,
     maxSize: 25,
     maxSpeed: 2,
