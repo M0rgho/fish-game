@@ -11,6 +11,8 @@ export class Environment {
   private readonly SURFACE_FREQUENCY = 0.02;
   private readonly SURFACE_SPEED = 0.01;
 
+  private readonly KELP_DENSITY = 0.2;
+
   constructor(scene: Phaser.Scene, config: typeof GameConfig) {
     this.scene = scene;
     this.config = config;
@@ -60,7 +62,7 @@ export class Environment {
     const curve = new Phaser.Curves.Spline(points);
 
     // Draw filled curve
-    graphics.fillStyle(0xcbbd93, 0.3);
+    graphics.fillStyle(0xcbbd93, 1);
     graphics.beginPath();
     curve.draw(graphics, (64 * this.config.worldWidth) / this.config.windowWidth);
     graphics.closePath();
@@ -79,8 +81,8 @@ export class Environment {
         midY,
         this.config.ground.quality,
         Math.max(this.config.ground.quality, 10),
-        0x00ff00,
-        0.2
+        0x00f00,
+        0.9
       );
       if (this.config.debug) {
         box.setStrokeStyle(2, 0x00ff00);
@@ -89,9 +91,30 @@ export class Environment {
       }
       this.scene.physics.add.existing(box, true);
       this.groundBodies.add(box);
+
+      // Create kelp
+      if (Math.random() < this.KELP_DENSITY) {
+        const maxAllowedScale = Math.min(
+          (this.config.worldHeight -
+            this.config.surface.height -
+            this.config.ground.baseHeight -
+            200) /
+            1600,
+          8
+        );
+        const scale = Phaser.Math.Between(1, maxAllowedScale);
+        const kelp = this.scene.physics.add.image(midX, midY - 350 * scale, 'kelp');
+        console.log(kelp.width, kelp.height);
+        kelp.setScale(scale);
+        kelp.setDepth(-10);
+        kelp.setTintFill(0x00331a);
+        kelp.setAlpha(Phaser.Math.Between(0.5, 1));
+        if (Math.random() < 0.5) {
+          kelp.setFlipX(true);
+        }
+      }
     }
     graphics.setDepth(1.3);
-    graphics.setAlpha(0.9);
   }
 
   private createSurfaceLine() {

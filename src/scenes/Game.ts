@@ -45,6 +45,7 @@ export class FishGame extends Scene {
     this.load.image('shark', 'assets/shark_silhouette.svg');
     this.load.image('fish', 'assets/fish.svg');
     this.load.image('clown_fish', 'assets/clown_fish.svg');
+    this.load.image('kelp', 'assets/kelp.svg');
 
     // Create a circle texture for speed lines
     const graphics = this.make.graphics();
