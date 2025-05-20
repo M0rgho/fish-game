@@ -348,8 +348,10 @@ export class Boid {
 
   update(nearbyBoids: PositionedObject[]): void {
     // Set angular velocity based on velocity direction
-    const angle = Math.atan2(this.sprite.body.velocity.y, this.sprite.body.velocity.x);
-    this.sprite.setRotation(angle);
+    if (this.sprite.body.velocity.length() > 0) {
+      const angle = Math.atan2(this.sprite.body.velocity.y, this.sprite.body.velocity.x);
+      this.sprite.setRotation(angle);
+    }
 
     // Handle water surface interaction
     if (this.sprite.y < this.config.surface.height) {
@@ -358,7 +360,9 @@ export class Boid {
     } else {
       this.sprite.setGravityY(0);
     }
-    if (!this.isAlive) return;
+    if (!this.isAlive) {
+      return;
+    }
 
     // Get all nearby boids categorized by their distance
     const nearby = this.getNearbyBoids(nearbyBoids);
@@ -424,18 +428,45 @@ export class Boid {
   // }
 
   dieAnimation(): void {
+    this.isAlive = false;
+
     // Make the fish red
-    this.sprite.setTintFill(0xff0000);
+    this.sprite.setDrag(400);
+
+    // Create death particle effect
+    const deathEmitter = this.scene.add.particles(0, 0, 'blood_particle', {
+      x: 0,
+      y: 0,
+      lifespan: 400,
+      speed: { min: 10, max: 150 },
+      scale: { start: this.size / 12, end: 0.5 },
+      alpha: { start: 0.8, end: 0 },
+      emitting: true,
+      quantity: 3,
+      frequency: 2,
+      follow: this.sprite,
+      rotate: this.sprite.rotation,
+      angle: { min: 0, max: 360 },
+      tint: 0x8a0303,
+      emitZone: {
+        type: 'random',
+        source: new Phaser.Geom.Circle(0, 0, this.size * 2),
+        quantity: 1,
+      },
+    });
 
     // Increment the counter
     this.scene.counter.updateCounter();
+
     // Fade out the fish
     this.scene.tweens.add({
-      targets: this.sprite,
-      alpha: 0.2,
-      duration: 1000,
+      targets: [this.sprite, deathEmitter],
+      alpha: 0,
+      duration: 1200,
+      onComplete: () => {
+        deathEmitter.destroy();
+      },
     });
-    this.sprite.setDrag(500);
   }
 
   getSprite(): Phaser.Types.Physics.Arcade.ImageWithDynamicBody {

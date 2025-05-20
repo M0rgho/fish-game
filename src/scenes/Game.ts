@@ -53,6 +53,13 @@ export class FishGame extends Scene {
     graphics.fillCircle(4, 4, 4);
     graphics.generateTexture('speed_line', 4, 4);
     graphics.destroy();
+
+    // Create a blood particle texture
+    const bloodGraphics = this.make.graphics();
+    bloodGraphics.fillStyle(0xff0000, 1);
+    bloodGraphics.fillCircle(2, 2, 2);
+    bloodGraphics.generateTexture('blood_particle', 4, 4);
+    bloodGraphics.destroy();
   }
 
   create() {

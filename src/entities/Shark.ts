@@ -103,15 +103,15 @@ export class Shark {
       y: 0,
       lifespan: 300,
       speed: { min: 100, max: 200 },
-      scale: { start: 1, end: 0.2 },
+      scale: { start: 0.5, end: 0.1 },
       alpha: { start: 1, end: 0 },
-      blendMode: 'ADD',
+      // blendMode: 'ADD',
       emitting: false,
       quantity: 1,
-      frequency: 1,
+      frequency: 3,
       follow: this.sprite,
       rotate: this.sprite.rotation,
-      angle: { min: -15, max: 15 },
+      angle: { min: -25, max: 25 },
       emitZone: {
         type: 'edge',
         source: new Phaser.Geom.Circle(0, 0, 15),
@@ -135,8 +135,9 @@ export class Shark {
     this.speedParticleEmitter.setConfig({
       quantity,
       speed: { min: minSpeed, max: maxSpeed },
-      angle: { min: -20 * (1 - speedRatio * 0.8), max: 20 * (1 - speedRatio * 0.8) },
+      angle: { min: -25 * (1 - speedRatio * 0.6), max: 25 * (1 - speedRatio * 0.6) },
       alpha: { start: 0.8, end: 0 },
+      tint: 0x89c3f2,
       scale: { start: 20 * this.currentScale, end: 2 * this.currentScale },
       emitZone: {
         type: 'random',
@@ -156,7 +157,7 @@ export class Shark {
 
     const rotation = this.sprite.rotation;
 
-    const offsetX = (-this.sprite.width * this.currentScale) / 2 + 20;
+    const offsetX = ((500 - this.sprite.width) * this.currentScale) / 2;
     const offsetY = 0;
 
     const cos = Math.cos(rotation);
