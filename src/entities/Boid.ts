@@ -22,7 +22,7 @@ export class Boid {
   private static readonly MAX_SPEED = 300;
   private static readonly MAX_FORCE = 0.5;
   private static readonly COLLISION_FORCE = 2.5;
-  private static readonly SHARK_AVOIDANCE_RADIUS = 300; // Radius to avoid shark
+  private static readonly SHARK_AVOIDANCE_RADIUS = 500; // Radius to avoid shark
   private static readonly SHARK_FORCE = 50; // Strong avoidance force for shark
   private static readonly TOP_HALF_PREFERENCE_FORCE = 0.3; // Gentle force to stay in top half
 
