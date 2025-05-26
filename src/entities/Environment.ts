@@ -6,6 +6,7 @@ export class Environment {
   private config: typeof GameConfig;
   public groundBodies: Phaser.Physics.Arcade.StaticGroup;
   public rocksBodies: Phaser.Physics.Arcade.StaticGroup;
+  public corals: Phaser.GameObjects.Image[];
   private surfaceLine: Phaser.GameObjects.Graphics;
   private surfaceTime: number = 0;
   private readonly SURFACE_AMPLITUDE = 10;
@@ -13,7 +14,7 @@ export class Environment {
   private readonly SURFACE_SPEED = 0.01;
 
   private readonly KELP_DENSITY = 0.2;
-  private readonly ROCK_DENSITY = 0;
+  private readonly CORAL_DENSITY = 0.3;
 
   constructor(scene: Phaser.Scene, config: typeof GameConfig) {
     this.scene = scene;
@@ -120,6 +121,9 @@ export class Environment {
 
     // create rocks
     this.createRocks(points);
+
+    // create corals
+    this.createCorals(points);
   }
 
   private createSurfaceLine() {
@@ -210,5 +214,25 @@ export class Environment {
 
   public update() {
     this.updateSurfaceLine();
+    this.updateCorals();
+  }
+
+  private createCorals(points: Phaser.Math.Vector2[]) {
+    this.corals = [];
+    for (const point of points) {
+      if (Math.random() > this.CORAL_DENSITY) continue;
+      const scale = Phaser.Math.FloatBetween(0.03, 0.07);
+      const coral = this.scene.physics.add.staticImage(point.x, point.y - 800 * scale, 'coral');
+      coral.setRotation(Phaser.Math.FloatBetween(-0.2, 0.2));
+      coral.setScale(scale);
+      coral.setTintFill(Phaser.Math.Between(0xbd684a, 0xedb9ad));
+      this.corals.push(coral);
+    }
+  }
+
+  private updateCorals() {
+    this.corals.forEach((coral, index) => {
+      coral.setRotation(Math.sin(this.surfaceTime + Math.cos(index * 20)) * 0.2);
+    });
   }
 }
