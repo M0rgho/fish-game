@@ -4,6 +4,7 @@ import { Shark } from '../entities/Shark';
 import { Environment } from '../entities/Environment';
 import { Counter } from '../entities/Counter';
 import { BoidManager } from '../entities/BoidManager';
+import { UI } from '../entities/UI';
 
 export class FishGame extends Scene {
   private camera: Phaser.Cameras.Scene2D.Camera;
@@ -12,6 +13,7 @@ export class FishGame extends Scene {
   private cursors: Phaser.Types.Input.Keyboard.CursorKeys;
   private fullscreenKey: Phaser.Input.Keyboard.Key;
   private boidManager: BoidManager;
+  private ui: UI;
   // private groundBodies: Phaser.Physics.Arcade.StaticGroup;
 
   // ============ public ============
@@ -30,6 +32,7 @@ export class FishGame extends Scene {
           debugShowBody: true,
           debugShowVelocity: true,
           debugBodyColor: 0x00ff00,
+          isPaused: true,
         },
       },
     });
@@ -121,9 +124,20 @@ export class FishGame extends Scene {
         this.scale.startFullscreen();
       }
     });
+    this.environment.update();
+
+    // Initialize UI
+    this.ui = new UI(this, this.config);
   }
 
   update() {
+    if (this.ui.isPaused) {
+      this.physics.pause();
+      return;
+    }
+
+    this.physics.resume();
+
     // Update shark first
     this.shark.update(this.cursors);
 

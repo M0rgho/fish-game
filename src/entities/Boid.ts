@@ -31,6 +31,7 @@ export class Boid {
   private static readonly WATER_AVOIDANCE_FORCE = 2.0; // Force to avoid water surface
 
   private fishBoneManager: FishBoneManager;
+  private deathEmitter: Phaser.GameObjects.Particles.ParticleEmitter;
 
   constructor(
     scene: FishGame,
@@ -63,6 +64,10 @@ export class Boid {
     this.sprite.setCircle(this.sprite.width / 2);
     this.sprite.setBounce(0.6);
     this.sprite.setVelocity(Phaser.Math.Between(-400, 400), Phaser.Math.Between(-400, 400));
+
+    // Listen for pause/resume events
+    this.scene.events.on('gamePaused', this.pauseParticles, this);
+    this.scene.events.on('gameResumed', this.resumeParticles, this);
   }
 
   private getNearbyBoids(nearbyBoids: PositionedObject[]): {
@@ -442,8 +447,27 @@ export class Boid {
     // Make the fish red
     this.sprite.setDrag(400);
 
+    this.createDeathEffect();
+
+    // Increment the counter
+    this.scene.counter.updateCounter();
+    // Create a fish bone that falls to the ground
+    this.fishBoneManager.createFishBone(this);
+
+    // Fade out the fish
+    this.scene.tweens.add({
+      targets: [this.sprite, this.deathEmitter],
+      alpha: 0,
+      duration: 1200,
+      onComplete: () => {
+        this.deathEmitter.destroy();
+      },
+    });
+  }
+
+  private createDeathEffect(): void {
     // Create death particle effect
-    const deathEmitter = this.scene.add.particles(0, 0, 'blood_particle', {
+    this.deathEmitter = this.scene.add.particles(0, 0, 'blood_particle', {
       x: 0,
       y: 0,
       lifespan: 400,
@@ -463,21 +487,18 @@ export class Boid {
         quantity: 1,
       },
     });
+  }
 
-    // Increment the counter
-    this.scene.counter.updateCounter();
-    // Create a fish bone that falls to the ground
-    this.fishBoneManager.createFishBone(this);
+  public pauseParticles(): void {
+    if (this.deathEmitter) {
+      this.deathEmitter.pause();
+    }
+  }
 
-    // Fade out the fish
-    this.scene.tweens.add({
-      targets: [this.sprite, deathEmitter],
-      alpha: 0,
-      duration: 1200,
-      onComplete: () => {
-        deathEmitter.destroy();
-      },
-    });
+  public resumeParticles(): void {
+    if (this.deathEmitter) {
+      this.deathEmitter.resume();
+    }
   }
 
   getSprite(): Phaser.Types.Physics.Arcade.ImageWithDynamicBody {

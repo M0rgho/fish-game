@@ -63,6 +63,10 @@ export class Shark {
 
     // Create speed lines particle emitter
     this.createSpeedLines();
+
+    // Listen for pause/resume events
+    this.scene.events.on('gamePaused', this.pauseEffects, this);
+    this.scene.events.on('gameResumed', this.resumeEffects, this);
   }
 
   private createTurboMeter(): void {
@@ -276,5 +280,19 @@ export class Shark {
       this.turboCapacity + this.TURBO_CAPACITY_INCREASE,
       this.MAX_TURBO_CAPACITY
     );
+  }
+
+  public pauseEffects(): void {
+    // Pause any particle effects
+    if (this.speedParticleEmitter) {
+      this.speedParticleEmitter.pause();
+    }
+  }
+
+  public resumeEffects(): void {
+    // Resume any particle effects
+    if (this.speedParticleEmitter) {
+      this.speedParticleEmitter.resume();
+    }
   }
 }
