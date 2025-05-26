@@ -44,6 +44,7 @@ export class FishGame extends Scene {
   preload() {
     this.load.image('shark', 'assets/shark_silhouette.svg');
     this.load.image('fish', 'assets/fish.svg');
+    this.load.image('fish-bone', 'assets/fish-bone.png');
     this.load.image('clown_fish', 'assets/clown_fish.svg');
     this.load.image('rock', 'assets/rock.png');
     this.load.image('jellyfish', 'assets/jellyfish.png');
@@ -98,6 +99,14 @@ export class FishGame extends Scene {
     this.physics.add.collider(this.environment.jellyfishBodies, this.environment.rocksBodies);
     this.physics.add.collider(this.environment.jellyfishBodies, this.environment.groundBodies);
     this.physics.add.collider(this.shark.getSprite(), this.environment.rocksBodies);
+    this.physics.add.collider(
+      this.boidManager.fishBoneManager.fishBonesBodies,
+      this.environment.groundBodies
+    );
+    this.physics.add.collider(
+      this.boidManager.fishBoneManager.fishBonesBodies,
+      this.environment.rocksBodies
+    );
 
     this.cursors = this.input.keyboard.createCursorKeys();
 

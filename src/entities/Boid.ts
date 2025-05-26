@@ -2,11 +2,12 @@ import Phaser from 'phaser';
 import { GameConfig } from '../config/GameConfig';
 import { FishGame } from '../scenes/Game';
 import { PositionedObject } from '../util/QuadTree';
+import { FishBoneManager } from './FishBoneManager';
 // import { PhysicsConfig } from '../config/PhysicsConfig';
 
 export class Boid {
-  private sprite: Phaser.Types.Physics.Arcade.ImageWithDynamicBody;
-  private size: number;
+  public sprite: Phaser.Types.Physics.Arcade.ImageWithDynamicBody;
+  public size: number;
   private scene: FishGame;
   private config: typeof GameConfig;
 
@@ -29,12 +30,20 @@ export class Boid {
   private static readonly WATER_SURFACE_BUFFER = 50; // Distance to start avoiding surface
   private static readonly WATER_AVOIDANCE_FORCE = 2.0; // Force to avoid water surface
 
-  constructor(scene: FishGame, x: number, y: number, group: Phaser.Physics.Arcade.Group) {
+  private fishBoneManager: FishBoneManager;
+
+  constructor(
+    scene: FishGame,
+    x: number,
+    y: number,
+    group: Phaser.Physics.Arcade.Group,
+    fishBoneManager: FishBoneManager
+  ) {
     this.config = GameConfig;
     // this.physicsConfig = PhysicsConfig;
     this.scene = scene;
     this.size = Phaser.Math.Between(Boid.MIN_SIZE, Boid.MAX_SIZE);
-
+    this.fishBoneManager = fishBoneManager;
     // Load fish sprite and add physics
     this.sprite = scene.physics.add.image(x, y, 'fish');
     this.sprite.setScale(this.size / 360); // Adjust scale since SVG is 576x512
@@ -457,6 +466,8 @@ export class Boid {
 
     // Increment the counter
     this.scene.counter.updateCounter();
+    // Create a fish bone that falls to the ground
+    this.fishBoneManager.createFishBone(this);
 
     // Fade out the fish
     this.scene.tweens.add({

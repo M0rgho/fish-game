@@ -3,6 +3,7 @@ import { FishGame } from '../scenes/Game';
 import { QuadTree } from '../util/QuadTree';
 import { Boid } from './Boid';
 import Phaser from 'phaser';
+import { FishBoneManager } from './FishBoneManager';
 
 export class BoidManager {
   private boids: Boid[];
@@ -12,6 +13,7 @@ export class BoidManager {
   private boidGroup: Phaser.Physics.Arcade.Group;
   private quadTree: QuadTree;
   private readonly BOID_SELECTION_SIZE = 300;
+  public fishBoneManager: FishBoneManager;
 
   constructor(scene: FishGame, config: typeof GameConfig) {
     this.scene = scene;
@@ -25,8 +27,8 @@ export class BoidManager {
       dragX: 0,
       dragY: 0,
     });
-
     this.quadTree = new QuadTree(0, 0, this.config.worldWidth, this.config.worldHeight, 50, 5);
+    this.fishBoneManager = new FishBoneManager(scene, config);
 
     this.createBoids();
   }
@@ -66,7 +68,7 @@ export class BoidManager {
         const x = centerX + radius * Math.cos(angle);
         const y = Math.max(centerY + radius * Math.sin(angle), this.config.surface.height + 50);
 
-        const boid = new Boid(this.scene, x, y, this.boidGroup);
+        const boid = new Boid(this.scene, x, y, this.boidGroup, this.fishBoneManager);
         this.boids.push(boid);
         this.quadTree.insert({
           x: boid.getSprite().x,
@@ -134,7 +136,7 @@ export class BoidManager {
     // Check if we need to spawn more boids
     if (this.boids.length < this.config.boids.count) {
       const x = Phaser.Math.Between(30, this.config.worldWidth - 30);
-      const boid = new Boid(this.scene, x, 10, this.boidGroup);
+      const boid = new Boid(this.scene, x, 10, this.boidGroup, this.fishBoneManager);
 
       this.boids.push(boid);
       this.boidGroup.add(boid.getSprite());
