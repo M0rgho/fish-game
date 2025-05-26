@@ -32,21 +32,52 @@ export class BoidManager {
   }
 
   private createBoids(): void {
-    for (let i = 0; i < this.config.boids.count; i++) {
-      const boid = new Boid(
-        this.scene,
-        Phaser.Math.Between(0, this.config.worldWidth),
-        Phaser.Math.Between(this.config.surface.height, this.config.worldHeight - 400),
-        this.boidGroup
+    // Spawn fish in clusters
+    let remainingBoids = this.config.boids.count;
+    while (remainingBoids > 0) {
+      // Determine cluster size between 10-30 fish
+      const clusterSize = Math.min(Phaser.Math.Between(10, 30), remainingBoids);
+
+      // Pick a random center point for the cluster
+      const centerX = Phaser.Math.Between(100, this.config.worldWidth - 100);
+      const centerY = Phaser.Math.Between(
+        this.config.surface.height + 100,
+        this.config.worldHeight / 2
       );
-      this.boids.push(boid);
-      this.quadTree.insert({
-        x: boid.getSprite().x,
-        y: boid.getSprite().y,
-        right: boid.getSprite().x + boid.getSprite().width,
-        bottom: boid.getSprite().y + boid.getSprite().height,
-        gameObject: boid,
-      });
+
+      // Check if cluster center is too close to shark
+      const sharkSprite = this.scene.shark.getSprite();
+      const distanceToShark = Phaser.Math.Distance.Between(
+        centerX,
+        centerY,
+        sharkSprite.x,
+        sharkSprite.y
+      );
+      if (distanceToShark < 400) {
+        continue;
+      }
+
+      // Spawn fish in cluster with slight random offsets
+      for (let i = 0; i < clusterSize; i++) {
+        const spread = 200;
+        const angle = Phaser.Math.FloatBetween(0, Math.PI * 2);
+        const radius = Phaser.Math.FloatBetween(0, spread);
+
+        const x = centerX + radius * Math.cos(angle);
+        const y = Math.max(centerY + radius * Math.sin(angle), this.config.surface.height + 50);
+
+        const boid = new Boid(this.scene, x, y, this.boidGroup);
+        this.boids.push(boid);
+        this.quadTree.insert({
+          x: boid.getSprite().x,
+          y: boid.getSprite().y,
+          right: boid.getSprite().x + boid.getSprite().width,
+          bottom: boid.getSprite().y + boid.getSprite().height,
+          gameObject: boid,
+        });
+      }
+
+      remainingBoids -= clusterSize;
     }
 
     // add overlap handler with shark
