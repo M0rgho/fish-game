@@ -1,5 +1,6 @@
 import { createNoise2D } from 'simplex-noise';
 import { GameConfig } from '../config/GameConfig';
+import { Jellyfish } from './Jellyfish';
 
 export class Environment {
   private scene: Phaser.Scene;
@@ -7,6 +8,8 @@ export class Environment {
   public groundBodies: Phaser.Physics.Arcade.StaticGroup;
   public rocksBodies: Phaser.Physics.Arcade.StaticGroup;
   public corals: Phaser.GameObjects.Image[];
+  public jellyfish: Jellyfish[];
+  public jellyfishBodies: Phaser.Physics.Arcade.Group;
   private surfaceLine: Phaser.GameObjects.Graphics;
   private surfaceTime: number = 0;
   private readonly SURFACE_AMPLITUDE = 10;
@@ -15,6 +18,7 @@ export class Environment {
 
   private readonly KELP_DENSITY = 0.2;
   private readonly CORAL_DENSITY = 0.3;
+  private readonly JELLYFISH_COUNT = 100;
 
   constructor(scene: Phaser.Scene, config: typeof GameConfig) {
     this.scene = scene;
@@ -107,7 +111,6 @@ export class Environment {
         );
         const scale = Phaser.Math.Between(1, maxAllowedScale);
         const kelp = this.scene.physics.add.image(midX, midY - 350 * scale, 'kelp');
-        console.log(kelp.width, kelp.height);
         kelp.setScale(scale);
         kelp.setDepth(-10);
         kelp.setTintFill(0x00331a);
@@ -119,11 +122,9 @@ export class Environment {
     }
     graphics.setDepth(1.3);
 
-    // create rocks
     this.createRocks(points);
-
-    // create corals
     this.createCorals(points);
+    this.createJellyfish();
   }
 
   private createSurfaceLine() {
@@ -215,6 +216,7 @@ export class Environment {
   public update() {
     this.updateSurfaceLine();
     this.updateCorals();
+    this.jellyfish.forEach((jellyfish) => jellyfish.update());
   }
 
   private createCorals(points: Phaser.Math.Vector2[]) {
@@ -227,6 +229,26 @@ export class Environment {
       coral.setScale(scale);
       coral.setTintFill(Phaser.Math.Between(0xbd684a, 0xedb9ad));
       this.corals.push(coral);
+    }
+  }
+
+  private createJellyfish() {
+    this.jellyfish = [];
+    this.jellyfishBodies = this.scene.physics.add.group({
+      collideWorldBounds: true,
+      bounceX: 1,
+      bounceY: 1,
+      dragX: 0,
+      dragY: 0,
+    });
+    for (let i = 0; i < this.JELLYFISH_COUNT; i++) {
+      const x = Phaser.Math.FloatBetween(0, this.config.worldWidth);
+      const y = Phaser.Math.FloatBetween(
+        this.config.surface.height + 100,
+        this.config.worldHeight - this.config.ground.baseHeight - this.config.ground.maxHeight
+      );
+      const jellyfish = new Jellyfish(this.scene, x, y, this.jellyfishBodies);
+      this.jellyfish.push(jellyfish);
     }
   }
 

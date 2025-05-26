@@ -46,6 +46,7 @@ export class FishGame extends Scene {
     this.load.image('fish', 'assets/fish.svg');
     this.load.image('clown_fish', 'assets/clown_fish.svg');
     this.load.image('rock', 'assets/rock.png');
+    this.load.image('jellyfish', 'assets/jellyfish.png');
     this.load.image('coral', 'assets/coral.png');
     this.load.image('kelp', 'assets/kelp.svg');
 
@@ -94,6 +95,8 @@ export class FishGame extends Scene {
 
     // Add collision between shark and ground
     this.physics.add.collider(this.shark.getSprite(), this.environment.groundBodies);
+    this.physics.add.collider(this.environment.jellyfishBodies, this.environment.rocksBodies);
+    this.physics.add.collider(this.environment.jellyfishBodies, this.environment.groundBodies);
     this.physics.add.collider(this.shark.getSprite(), this.environment.rocksBodies);
 
     this.cursors = this.input.keyboard.createCursorKeys();
