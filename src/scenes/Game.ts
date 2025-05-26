@@ -13,7 +13,11 @@ export class FishGame extends Scene {
   private cursors: Phaser.Types.Input.Keyboard.CursorKeys;
   private fullscreenKey: Phaser.Input.Keyboard.Key;
   private boidManager: BoidManager;
-  private ui: UI;
+  public ui: UI;
+  private gameTimeText: Phaser.GameObjects.Text;
+  private gameStartTime: number = 0;
+  private totalPausedTime: number = 0;
+  private lastPauseTime: number = 0;
   // private groundBodies: Phaser.Physics.Arcade.StaticGroup;
 
   // ============ public ============
@@ -128,15 +132,45 @@ export class FishGame extends Scene {
 
     // Initialize UI
     this.ui = new UI(this, this.config);
+
+    // Create game time display
+    this.gameTimeText = this.add.text(20, 20, 'Time: 00:00', {
+      fontFamily: 'Arial',
+      fontSize: '24px',
+      color: '#ffffff',
+      stroke: '#000000',
+      strokeThickness: 4,
+    });
+    this.gameTimeText.setScrollFactor(0);
+    this.gameTimeText.setDepth(3);
+    this.gameStartTime = Date.now();
+  }
+
+  private formatTime(ms: number): string {
+    const seconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
   }
 
   update() {
     if (this.ui.isPaused) {
       this.physics.pause();
+      if (this.lastPauseTime === 0) {
+        this.lastPauseTime = Date.now();
+      }
       return;
     }
 
     this.physics.resume();
+    if (this.lastPauseTime !== 0) {
+      this.totalPausedTime += Date.now() - this.lastPauseTime;
+      this.lastPauseTime = 0;
+    }
+
+    // Update game time with pause compensation
+    const currentTime = Date.now() - this.gameStartTime - this.totalPausedTime;
+    this.gameTimeText.setText(`Time: ${this.formatTime(currentTime)}`);
 
     // Update shark first
     this.shark.update(this.cursors);
