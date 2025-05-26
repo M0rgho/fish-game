@@ -52,7 +52,7 @@ export class Boid {
 
     // Set up physics body
     this.sprite.setCircle(this.sprite.width / 2);
-    this.sprite.setBounce(1);
+    this.sprite.setBounce(0.6);
     this.sprite.setVelocity(Phaser.Math.Between(-400, 400), Phaser.Math.Between(-400, 400));
   }
 

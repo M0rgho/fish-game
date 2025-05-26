@@ -117,6 +117,17 @@ export class BoidManager {
         sprite.body.velocity.rotate(randomTurn);
       }
     );
+
+    // add collider with rocks
+    this.scene.physics.add.collider(
+      this.boidGroup,
+      this.scene.environment.rocksBodies,
+      (object1: any) => {
+        const sprite = object1 as Phaser.Physics.Arcade.Image;
+        const randomTurn = Phaser.Math.FloatBetween(-0.1, 0.1);
+        sprite.body.velocity.rotate(randomTurn);
+      }
+    );
   }
 
   update(): void {

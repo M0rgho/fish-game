@@ -5,6 +5,7 @@ export class Environment {
   private scene: Phaser.Scene;
   private config: typeof GameConfig;
   public groundBodies: Phaser.Physics.Arcade.StaticGroup;
+  public rocksBodies: Phaser.Physics.Arcade.StaticGroup;
   private surfaceLine: Phaser.GameObjects.Graphics;
   private surfaceTime: number = 0;
   private readonly SURFACE_AMPLITUDE = 10;
@@ -12,6 +13,7 @@ export class Environment {
   private readonly SURFACE_SPEED = 0.01;
 
   private readonly KELP_DENSITY = 0.2;
+  private readonly ROCK_DENSITY = 0;
 
   constructor(scene: Phaser.Scene, config: typeof GameConfig) {
     this.scene = scene;
@@ -19,8 +21,8 @@ export class Environment {
 
     this.createBackground();
     // add second background layer to get squared color effect
-    const bg2 = this.createBackground();
-    bg2.setAlpha(0.7);
+    // const bg2 = this.createBackground();
+    // bg2.setAlpha(0.7);
 
     this.createGround();
     this.createSurfaceLine();
@@ -115,6 +117,9 @@ export class Environment {
       }
     }
     graphics.setDepth(1.3);
+
+    // create rocks
+    this.createRocks(points);
   }
 
   private createSurfaceLine() {
@@ -169,6 +174,38 @@ export class Environment {
 
     this.surfaceLine.closePath();
     this.surfaceLine.fillPath();
+  }
+
+  private createRocks(points: Phaser.Math.Vector2[]) {
+    this.rocksBodies = this.scene.physics.add.staticGroup();
+    const offsets = [];
+    let totalOffset = 0;
+    while (totalOffset < points.length) {
+      const offset = Phaser.Math.Between(3, 30);
+      totalOffset += offset;
+      offsets.push(totalOffset);
+    }
+    offsets.pop();
+    for (const offset of offsets) {
+      const scale = Phaser.Math.FloatBetween(0.05, 0.3);
+      const yOffset = Phaser.Math.FloatBetween(0, 100) * scale;
+      const rock = this.scene.physics.add.staticImage(
+        points[offset].x,
+        points[offset].y - yOffset,
+        'rock'
+      );
+      rock.setScale(scale);
+      rock.setCircle(100);
+      rock.refreshBody();
+      const radius = rock.width * scale * 0.38;
+      rock.body.setCircle(radius, 0, 0);
+      rock.body.setOffset(rock.width * scale * 0.5 - radius, rock.height * scale * 0.17);
+      rock.setBounce(1);
+
+      // rock.setCircle(rock.width * scale * 0, 10, rock.width * scale * 0.1);
+
+      this.rocksBodies.add(rock);
+    }
   }
 
   public update() {

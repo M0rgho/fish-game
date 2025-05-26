@@ -40,6 +40,7 @@ export class Shark {
     this.sprite.setCollideWorldBounds(true);
     this.sprite.setDamping(true);
     this.sprite.setDrag(0.8);
+    this.sprite.setBounce(0.2);
     this.sprite.debugShowVelocity = true;
     this.sprite.setTintFill(0x232323);
     this.sprite.setAlpha(0.9);

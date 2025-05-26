@@ -45,6 +45,7 @@ export class FishGame extends Scene {
     this.load.image('shark', 'assets/shark_silhouette.svg');
     this.load.image('fish', 'assets/fish.svg');
     this.load.image('clown_fish', 'assets/clown_fish.svg');
+    this.load.image('rock', 'assets/rock.png');
     this.load.image('kelp', 'assets/kelp.svg');
 
     // Create a circle texture for speed lines
@@ -78,7 +79,7 @@ export class FishGame extends Scene {
     this.environment = new Environment(this, this.config);
 
     // // Create shark
-    this.shark = new Shark(this, 300, this.config.surface.height + 100);
+    this.shark = new Shark(this, this.config.windowWidth / 2, this.config.surface.height + 100);
     this.shark.getSprite().setDepth(1.1);
 
     this.camera.startFollow(
@@ -92,6 +93,7 @@ export class FishGame extends Scene {
 
     // Add collision between shark and ground
     this.physics.add.collider(this.shark.getSprite(), this.environment.groundBodies);
+    this.physics.add.collider(this.shark.getSprite(), this.environment.rocksBodies);
 
     this.cursors = this.input.keyboard.createCursorKeys();
 
