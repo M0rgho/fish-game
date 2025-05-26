@@ -2,7 +2,7 @@ export const GameConfig = {
   windowWidth: window.innerWidth,
   windowHeight: window.innerHeight,
   worldWidth: window.innerWidth * 8,
-  worldHeight: window.innerHeight * 4,
+  worldHeight: window.innerHeight * 3,
   debug: false,
 
   camera: {
@@ -11,10 +11,10 @@ export const GameConfig = {
   },
 
   ground: {
-    baseHeight: 200,
+    baseHeight: 300,
     quality: 40,
     resolution: 0.001,
-    maxHeight: 200,
+    maxHeight: 300,
     surfraceRoughness: 10,
   },
 
@@ -23,7 +23,7 @@ export const GameConfig = {
   },
 
   boids: {
-    count: 1000,
+    count: 600,
     minSize: 10,
     maxSize: 25,
     maxSpeed: 2,
