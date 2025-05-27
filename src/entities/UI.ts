@@ -14,6 +14,9 @@ interface TextConfig {
 export class UI {
   private scene: FishGame;
   private config: typeof GameConfig;
+  private mainContainer: Phaser.GameObjects.Container;
+  private menuContainer: Phaser.GameObjects.Container;
+  private victoryContainer: Phaser.GameObjects.Container;
   private overlay: Phaser.GameObjects.Rectangle;
   private centerOverlay: Phaser.GameObjects.Sprite;
   private playButton: Phaser.GameObjects.Text;
@@ -49,6 +52,31 @@ export class UI {
   constructor(scene: FishGame, config: typeof GameConfig) {
     this.scene = scene;
     this.config = config;
+
+    // Create main container that will handle all UI elements
+    this.mainContainer = this.scene.add.container(
+      this.config.windowWidth / 2,
+      this.config.windowHeight / 2
+    );
+    this.mainContainer.setScrollFactor(0);
+    this.mainContainer.setDepth(100);
+
+    // Create menu container for start/pause menu elements
+    this.menuContainer = this.scene.add.container(
+      this.config.windowWidth / 2,
+      this.config.windowHeight / 2
+    );
+    this.menuContainer.setScrollFactor(0);
+    this.menuContainer.setDepth(101);
+
+    // Create victory container for victory screen elements
+    this.victoryContainer = this.scene.add.container(
+      this.config.windowWidth / 2,
+      this.config.windowHeight / 2
+    );
+    this.victoryContainer.setScrollFactor(0);
+    this.victoryContainer.setDepth(101);
+
     this.createOverlay();
     this.createCenterOverlay();
     this.createTitleText();
@@ -58,6 +86,7 @@ export class UI {
     this.createAuthorText();
     this.createVictoryText();
     this.setupEscapeKey();
+    this.setupResizeHandler();
     this.showStartMenu();
   }
 
@@ -74,15 +103,15 @@ export class UI {
 
   private createOverlay(): void {
     this.overlay = this.scene.add.rectangle(
-      this.config.windowWidth / 2,
-      this.config.windowHeight / 2,
+      0,
+      0,
       this.config.windowWidth,
       this.config.windowHeight,
       0x000000,
       0.8
     );
     this.overlay.setOrigin(0.5);
-    this.setupBaseUIElement(this.overlay);
+    this.mainContainer.add(this.overlay);
   }
 
   private createCenterOverlay(): void {
@@ -109,12 +138,9 @@ export class UI {
       this.scene.textures.addCanvas('centerGradient', canvas);
     }
 
-    this.centerOverlay = this.scene.add.sprite(
-      this.config.windowWidth / 2,
-      this.config.windowHeight / 2,
-      'centerGradient'
-    );
-    this.setupBaseUIElement(this.centerOverlay);
+    this.centerOverlay = this.scene.add.sprite(0, 0, 'centerGradient');
+    this.centerOverlay.setOrigin(0.5);
+    this.mainContainer.add(this.centerOverlay);
   }
 
   private createText(x: number, y: number, config: TextConfig): Phaser.GameObjects.Text {
@@ -128,42 +154,25 @@ export class UI {
     return text;
   }
 
-  private setupBaseUIElement(element: Phaser.GameObjects.GameObject): void {
-    if ('setDepth' in element) {
-      (element as any).setDepth(100);
-    }
-    if ('setVisible' in element) {
-      (element as any).setVisible(false);
-    }
-    if ('setScrollFactor' in element) {
-      (element as any).setScrollFactor(0);
-    }
-  }
-
   private createTitleText(): void {
-    this.titleText = this.createText(
-      this.config.windowWidth / 2,
-      this.config.windowHeight / 2 - 150,
-      { ...this.TITLE_STYLE, text: 'The Fish Game' }
-    );
+    this.titleText = this.createText(0, -150, { ...this.TITLE_STYLE, text: 'The Fish Game' });
+    this.menuContainer.add(this.titleText);
   }
 
   private createPlayButton(): void {
-    this.playButton = this.createText(
-      this.config.windowWidth / 2,
-      this.config.windowHeight / 2 - 50,
-      { ...this.BUTTON_STYLE, text: 'START' }
-    );
+    this.playButton = this.createText(0, -50, { ...this.BUTTON_STYLE, text: 'START' });
     this.setupButton(this.playButton);
+    this.menuContainer.add(this.playButton);
   }
 
   private createHowToPlayButton(): void {
-    this.howToPlayButton = this.createText(
-      this.config.windowWidth / 2,
-      this.config.windowHeight / 2 + 50,
-      { ...this.DEFAULT_TEXT_STYLE, fontSize: '32px', text: 'HOW TO PLAY' }
-    );
+    this.howToPlayButton = this.createText(0, 50, {
+      ...this.DEFAULT_TEXT_STYLE,
+      fontSize: '32px',
+      text: 'HOW TO PLAY',
+    });
     this.setupButton(this.howToPlayButton, () => this.toggleInfoBox());
+    this.menuContainer.add(this.howToPlayButton);
   }
 
   private setupButton(button: Phaser.GameObjects.Text, onClick?: () => void): void {
@@ -250,27 +259,25 @@ export class UI {
   }
 
   private createAuthorText(): void {
-    this.authorText = this.createText(this.config.windowWidth / 2, this.config.windowHeight - 30, {
+    this.authorText = this.createText(0, this.config.windowHeight / 2 - 30, {
       text: 'Mikołaj Maślak, Szymon Głomski, 2025',
       fontStyle: 'italic',
       color: '#cccccc',
     });
+    this.mainContainer.add(this.authorText);
   }
 
   private createVictoryText(): void {
-    this.victoryText = this.createText(
-      this.config.windowWidth / 2,
-      this.config.windowHeight / 2 - 150,
-      { ...this.TITLE_STYLE, text: 'Congratulations you won!' }
-    );
+    this.victoryText = this.createText(0, -150, {
+      ...this.TITLE_STYLE,
+      text: 'Congratulations you won!',
+    });
     this.victoryText.setVisible(false);
+    this.victoryContainer.add(this.victoryText);
 
-    this.timeText = this.createText(
-      this.config.windowWidth / 2,
-      this.config.windowHeight / 2 + 50,
-      { fontSize: '48px', text: 'Your time: 00:00' }
-    );
+    this.timeText = this.createText(0, 50, { fontSize: '48px', text: 'Your time: 00:00' });
     this.timeText.setVisible(false);
+    this.victoryContainer.add(this.timeText);
   }
 
   private toggleInfoBox(): void {
@@ -384,5 +391,29 @@ export class UI {
       this.gameStartTime = Date.now();
       this.scene.events.emit('gameResumed');
     });
+  }
+
+  private setupResizeHandler(): void {
+    this.scene.scale.on('resize', this.handleResize, this);
+  }
+
+  private handleResize(gameSize: Phaser.Structs.Size): void {
+    this.config.windowWidth = gameSize.width;
+    this.config.windowHeight = gameSize.height;
+
+    this.mainContainer.setPosition(this.config.windowWidth / 2, this.config.windowHeight / 2);
+
+    this.menuContainer.setPosition(this.config.windowWidth / 2, this.config.windowHeight / 2);
+
+    this.victoryContainer.setPosition(this.config.windowWidth / 2, this.config.windowHeight / 2);
+
+    this.overlay.setSize(this.config.windowWidth, this.config.windowHeight);
+
+    this.centerOverlay.setScale(
+      this.config.windowWidth / this.centerOverlay.width,
+      this.config.windowHeight / this.centerOverlay.height
+    );
+
+    this.authorText.setPosition(0, this.config.windowHeight / 2 - 30);
   }
 }
