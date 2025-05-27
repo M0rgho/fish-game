@@ -98,8 +98,8 @@ export class QuadTree {
       height: height,
       subWidth: Math.floor(width / 2),
       subHeight: Math.floor(height / 2),
-      right: Math.round(x) + Math.floor(width / 2),
-      bottom: Math.round(y) + Math.floor(height / 2),
+      right: Math.round(x) + width,
+      bottom: Math.round(y) + height,
     };
 
     this.objects = [];
@@ -219,21 +219,23 @@ export class QuadTree {
   private getIndex(rect: PositionedObject): number {
     //  default is that rect doesn't fit, i.e. it straddles the internal quadrants
     let index = -1;
+    const midX = this.bounds.x + this.bounds.subWidth;
+    const midY = this.bounds.y + this.bounds.subHeight;
 
-    if (rect.x < this.bounds.right && rect.right < this.bounds.right) {
-      if (rect.y < this.bounds.bottom && rect.bottom < this.bounds.bottom) {
+    if (rect.x < midX && rect.right < midX) {
+      if (rect.y < midY && rect.bottom < midY) {
         //  rect fits within the top-left quadrant of this quadtree
         index = 1;
-      } else if (rect.y > this.bounds.bottom) {
+      } else if (rect.y > midY) {
         //  rect fits within the bottom-left quadrant of this quadtree
         index = 2;
       }
-    } else if (rect.x > this.bounds.right) {
+    } else if (rect.x > midX) {
       //  rect can completely fit within the right quadrants
-      if (rect.y < this.bounds.bottom && rect.bottom < this.bounds.bottom) {
+      if (rect.y < midY && rect.bottom < midY) {
         //  rect fits within the top-right quadrant of this quadtree
         index = 0;
-      } else if (rect.y > this.bounds.bottom) {
+      } else if (rect.y > midY) {
         //  rect fits within the bottom-right quadrant of this quadtree
         index = 3;
       }
