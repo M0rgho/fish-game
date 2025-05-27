@@ -4,6 +4,8 @@ export const GameConfig = {
   worldWidth: window.innerWidth * 8,
   worldHeight: window.innerHeight * 3,
   debug: false,
+  disableSharkInteraction: false,
+  infiniteStamina: false,
 
   camera: {
     lerpX: 0.1,

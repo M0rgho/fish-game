@@ -87,6 +87,7 @@ export class BoidManager {
       this.scene.shark.getSprite() as Phaser.Physics.Arcade.Image,
       this.boidGroup,
       (object1: any, object2: any) => {
+        if (this.config.disableSharkInteraction) return;
         const boid = this.boids.find((b) => b.getSprite() === object2);
         if (boid && !this.dyingBoids.has(boid)) {
           boid.dieAnimation();

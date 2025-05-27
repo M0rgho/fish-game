@@ -27,10 +27,17 @@ export class UI {
   private titleText: Phaser.GameObjects.Text;
   private victoryText: Phaser.GameObjects.Text;
   private timeText: Phaser.GameObjects.Text;
+  private sharkInteractionCheckbox: Phaser.GameObjects.Rectangle;
+  private sharkInteractionText: Phaser.GameObjects.Text;
   public isPaused: boolean = true;
   private escapeKey: Phaser.Input.Keyboard.Key;
   private isFirstStart: boolean = true;
   private gameStartTime: number = 0;
+  private debugMode: boolean = false;
+  private debugInput: string = '';
+  private debugKeyTimeout: number = 2000; // Time in ms to reset debug input
+  private lastKeyPress: number = 0;
+  private debugCheckboxes: DebugCheckbox[] = [];
 
   private readonly DEFAULT_TEXT_STYLE: Partial<TextConfig> = {
     fontSize: '24px',
@@ -85,8 +92,10 @@ export class UI {
     this.createInfoBox();
     this.createAuthorText();
     this.createVictoryText();
+    this.createSharkInteractionToggle();
     this.setupEscapeKey();
     this.setupResizeHandler();
+    this.setupDebugInput();
     this.showStartMenu();
   }
 
@@ -335,6 +344,46 @@ export class UI {
     this.scene.events.emit('gamePaused');
   }
 
+  private createSharkInteractionToggle(): void {
+    const checkboxSize = 24;
+    const spacing = 40;
+    const bottomMargin = 50;
+    const totalHeight = spacing * (this.debugCheckboxes.length + 1); // +1 for future checkboxes
+    const baseY = this.config.windowHeight / 2 - bottomMargin - totalHeight;
+
+    // Create shark interaction checkbox
+    const sharkCheckbox = new DebugCheckbox(
+      this.scene,
+      -this.config.windowWidth / 2 + 50,
+      baseY,
+      checkboxSize,
+      'Disable Shark Interaction',
+      () => {
+        this.config.disableSharkInteraction = !this.config.disableSharkInteraction;
+        return this.config.disableSharkInteraction;
+      },
+      () => this.config.disableSharkInteraction
+    );
+    this.debugCheckboxes.push(sharkCheckbox);
+    this.mainContainer.add(sharkCheckbox.getElements());
+
+    // Create infinite stamina checkbox
+    const staminaCheckbox = new DebugCheckbox(
+      this.scene,
+      -this.config.windowWidth / 2 + 50,
+      baseY + spacing,
+      checkboxSize,
+      'Infinite Stamina',
+      () => {
+        this.config.infiniteStamina = !this.config.infiniteStamina;
+        return this.config.infiniteStamina;
+      },
+      () => this.config.infiniteStamina
+    );
+    this.debugCheckboxes.push(staminaCheckbox);
+    this.mainContainer.add(staminaCheckbox.getElements());
+  }
+
   private showStartMenu(): void {
     this.isPaused = true;
     const elements = [
@@ -415,5 +464,99 @@ export class UI {
     );
 
     this.authorText.setPosition(0, this.config.windowHeight / 2 - 30);
+  }
+
+  private setupDebugInput(): void {
+    this.scene.input.keyboard.on('keydown', (event: KeyboardEvent) => {
+      const currentTime = Date.now();
+
+      // Reset debug input if too much time has passed since last keypress
+      if (currentTime - this.lastKeyPress > this.debugKeyTimeout) {
+        this.debugInput = '';
+      }
+
+      this.lastKeyPress = currentTime;
+      this.debugInput += event.key.toLowerCase();
+
+      // Check if debug input matches "debugfish"
+      if (this.debugInput.includes('debugfish')) {
+        this.debugMode = !this.debugMode;
+        this.debugInput = '';
+        this.updateDebugElementsVisibility();
+      }
+    });
+  }
+
+  private updateDebugElementsVisibility(): void {
+    const isVisible = this.debugMode;
+    this.debugCheckboxes.forEach((checkbox) => checkbox.setVisible(isVisible));
+  }
+}
+
+class DebugCheckbox {
+  private checkbox: Phaser.GameObjects.Rectangle;
+  private checkmark: Phaser.GameObjects.Text;
+  private text: Phaser.GameObjects.Text;
+  private getState: () => boolean;
+  private isChecked: boolean;
+  private getCurrentState: () => boolean;
+
+  constructor(
+    scene: Phaser.Scene,
+    x: number,
+    y: number,
+    size: number,
+    label: string,
+    toggleState: () => boolean,
+    getCurrentState: () => boolean
+  ) {
+    this.getState = toggleState;
+    this.getCurrentState = getCurrentState;
+    this.isChecked = this.getCurrentState();
+
+    // Create checkbox background
+    this.checkbox = scene.add.rectangle(x, y, size, size, 0x000000, 0.8);
+    this.checkbox.setStrokeStyle(2, 0xffffff);
+    this.checkbox.setInteractive({ useHandCursor: true });
+    this.checkbox.setVisible(false);
+    this.checkbox.setScrollFactor(0);
+
+    // Create checkmark
+    this.checkmark = scene.add.text(x, y, '✓', {
+      fontSize: `${size}px`,
+      color: '#ffffff',
+    });
+    this.checkmark.setOrigin(0.5);
+    this.checkmark.setVisible(false);
+    this.checkmark.setScrollFactor(0);
+
+    // Create text
+    this.text = scene.add.text(x + size + 10, y, label, {
+      fontSize: '24px',
+      color: '#ffffff',
+    });
+    this.text.setOrigin(0, 0.5);
+    this.text.setInteractive({ useHandCursor: true });
+    this.text.setVisible(false);
+    this.text.setScrollFactor(0);
+
+    // Add click handlers
+    const toggle = () => {
+      this.isChecked = this.getState();
+      this.checkmark.setVisible(this.isChecked);
+    };
+
+    this.checkbox.on('pointerdown', toggle);
+    this.text.on('pointerdown', toggle);
+  }
+
+  public getElements(): Phaser.GameObjects.GameObject[] {
+    return [this.checkbox, this.checkmark, this.text];
+  }
+
+  public setVisible(visible: boolean): void {
+    this.checkbox.setVisible(visible);
+    this.text.setVisible(visible);
+    this.checkmark.setVisible(visible && this.isChecked);
   }
 }

@@ -401,7 +401,9 @@ export class Boid {
     const cohesion = this.cohesion(nearby.cohesion);
     const separation = this.separation(nearby.separation);
     const collisionAvoidance = this.avoidCollisions(nearby.collision);
-    const sharkAvoidance = this.avoidShark();
+    const sharkAvoidance = this.config.disableSharkInteraction
+      ? new Phaser.Math.Vector2()
+      : this.avoidShark();
     const topHalfPreference = this.preferMiddle();
     const waterAvoidance = this.avoidWaterSurface();
     const borderAvoidance = this.avoidBorders();

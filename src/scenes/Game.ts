@@ -119,15 +119,6 @@ export class FishGame extends Scene {
 
     this.counter = new Counter(this, this.config);
 
-    // Add fullscreen toggle key
-    this.fullscreenKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.F);
-    this.fullscreenKey.on('down', () => {
-      if (this.scale.isFullscreen) {
-        this.scale.stopFullscreen();
-      } else {
-        this.scale.startFullscreen();
-      }
-    });
     this.environment.update();
 
     // Initialize UI

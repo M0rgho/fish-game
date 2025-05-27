@@ -180,10 +180,12 @@ export class Shark {
     // Handle turbo boost
     if (cursors.space.isDown && this.turboMeter > 0.1 && !isAboveWater) {
       this.isTurboActive = true;
-      this.turboMeter = Math.max(
-        0,
-        this.turboMeter - this.TURBO_DEPLETION_RATE * this.scene.game.loop.delta
-      );
+      if (!this.config.infiniteStamina) {
+        this.turboMeter = Math.max(
+          0,
+          this.turboMeter - this.TURBO_DEPLETION_RATE * this.scene.game.loop.delta
+        );
+      }
       this.speedParticleEmitter.start();
       this.updateSpeedLines();
     } else {
