@@ -106,7 +106,7 @@ export class UI {
       0,
       0,
       this.config.windowWidth,
-      this.config.windowHeight,
+      this.config.windowHeight + 1,
       0x000000,
       0.8
     );
@@ -121,7 +121,7 @@ export class UI {
 
     const canvas = document.createElement('canvas');
     canvas.width = gradientWidth;
-    canvas.height = gradientHeight;
+    canvas.height = gradientHeight + 1;
     const ctx = canvas.getContext('2d');
 
     if (ctx) {
