@@ -22,15 +22,17 @@ export class Shark {
 
   // Turbo configuration
   private readonly TURBO_MULTIPLIER = 3;
-  private readonly TURBO_DEPLETION_RATE = 0.5;
-  private readonly TURBO_RECHARGE_RATE = 0.15;
+  private readonly TURBO_DEPLETION_RATE = 0.04;
+  private readonly TURBO_RECHARGE_RATE = 0.02;
   private readonly INITIAL_TURBO_CAPACITY = 50;
   private readonly TURBO_CAPACITY_INCREASE = 0.3;
   private readonly MAX_TURBO_CAPACITY = 200;
+  private readonly TURBO_COOLDOWN_TIME = 1500;
   private turboMeter: number = 50; // Start with 50% turbo
   private turboCapacity: number = 50; // Start with 50% capacity
   private isTurboActive: boolean = false;
   private turboBar: Phaser.GameObjects.Graphics;
+  private turboCooldownTimer: number = 0;
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
     this.config = GameConfig;
@@ -176,15 +178,33 @@ export class Shark {
     );
 
     // Handle turbo boost
-    if (cursors.space.isDown && this.turboMeter > 0 && !isAboveWater) {
+    if (cursors.space.isDown && this.turboMeter > 0.1 && !isAboveWater) {
       this.isTurboActive = true;
-      this.turboMeter = Math.max(0, this.turboMeter - this.TURBO_DEPLETION_RATE);
+      this.turboMeter = Math.max(
+        0,
+        this.turboMeter - this.TURBO_DEPLETION_RATE * this.scene.game.loop.delta
+      );
       this.speedParticleEmitter.start();
       this.updateSpeedLines();
     } else {
       this.isTurboActive = false;
-      this.turboMeter = Math.min(this.turboCapacity, this.turboMeter + this.TURBO_RECHARGE_RATE);
       this.speedParticleEmitter.stop();
+
+      if (this.turboCooldownTimer > 0) {
+        if (!cursors.space.isDown) this.turboCooldownTimer -= this.scene.game.loop.delta;
+      } else {
+        if (this.turboMeter === 0) {
+          this.turboCooldownTimer = this.TURBO_COOLDOWN_TIME;
+          this.turboMeter = -0.1;
+        }
+        this.turboMeter = Math.min(
+          this.turboCapacity,
+          this.turboMeter +
+            (this.currentScale / this.INITIAL_SCALE) *
+              this.TURBO_RECHARGE_RATE *
+              this.scene.game.loop.delta
+        );
+      }
     }
 
     // Apply gravity when above water
