@@ -12,7 +12,7 @@ export class BoidManager {
   private dyingBoids: Set<Boid>;
   private boidGroup: Phaser.Physics.Arcade.Group;
   private quadTree: QuadTree;
-  private readonly BOID_SELECTION_SIZE = 300;
+  private readonly BOID_SELECTION_SIZE = 400;
   public fishBoneManager: FishBoneManager;
 
   constructor(scene: FishGame, config: typeof GameConfig) {

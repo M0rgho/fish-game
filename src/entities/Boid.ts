@@ -14,8 +14,8 @@ export class Boid {
   private isAlive: boolean = true;
 
   // Boid behavior parameters
-  private static readonly ALIGNMENT_RADIUS = 150;
-  private static readonly COHESION_RADIUS = 100;
+  private static readonly ALIGNMENT_RADIUS = 200;
+  private static readonly COHESION_RADIUS = 250;
   private static readonly SEPARATION_RADIUS = 50;
   private static readonly COLLISION_RADIUS = 50;
   private static readonly MIN_SIZE = 12;
@@ -25,10 +25,12 @@ export class Boid {
   private static readonly COLLISION_FORCE = 2.5;
   private static readonly SHARK_AVOIDANCE_RADIUS = 500; // Radius to avoid shark
   private static readonly SHARK_FORCE = 50; // Strong avoidance force for shark
-  private static readonly TOP_HALF_PREFERENCE_FORCE = 0.3; // Gentle force to stay in top half
+  private static readonly STAY_MIDDLE_PREFERENCE_FORCE = 0.3; // Gentle force to stay in top half
 
   private static readonly WATER_SURFACE_BUFFER = 50; // Distance to start avoiding surface
   private static readonly WATER_AVOIDANCE_FORCE = 2.0; // Force to avoid water surface
+  private static readonly BORDER_BUFFER = 100; // Distance to start avoiding borders
+  private static readonly BORDER_AVOIDANCE_FORCE = 2.0; // Force to avoid borders
 
   private fishBoneManager: FishBoneManager;
   private deathEmitter: Phaser.GameObjects.Particles.ParticleEmitter;
@@ -282,18 +284,14 @@ export class Boid {
     return diff;
   }
 
-  private preferTopHalf(): Phaser.Math.Vector2 {
-    const targetY = this.config.surface.height * 0.25; // Target is 1/4 from the top
+  private preferMiddle(): Phaser.Math.Vector2 {
+    const targetY = this.config.worldHeight * 0.5; // Target is middle of world
     const currentY = this.sprite.body.position.y;
 
-    // Only apply force if boid is below the target
-    if (currentY > targetY) {
-      const diff = new Phaser.Math.Vector2(0, targetY - currentY);
-      diff.normalize().scale(Boid.TOP_HALF_PREFERENCE_FORCE);
-      return diff;
-    }
-
-    return new Phaser.Math.Vector2();
+    // Apply force towards middle
+    const diff = new Phaser.Math.Vector2(0, targetY - currentY);
+    diff.normalize().scale(Boid.STAY_MIDDLE_PREFERENCE_FORCE);
+    return diff;
   }
 
   private avoidWaterSurface(): Phaser.Math.Vector2 {
@@ -306,6 +304,24 @@ export class Boid {
     }
 
     return new Phaser.Math.Vector2();
+  }
+
+  private avoidBorders(): Phaser.Math.Vector2 {
+    const x = this.sprite.body.position.x;
+    const force = new Phaser.Math.Vector2(0, 0);
+
+    // Check left border
+    if (x < Boid.BORDER_BUFFER) {
+      const strength = (Boid.BORDER_BUFFER - x) / Boid.BORDER_BUFFER;
+      force.x = strength * Boid.BORDER_AVOIDANCE_FORCE;
+    }
+    // Check right border
+    else if (x > this.config.worldWidth - Boid.BORDER_BUFFER) {
+      const strength = (x - (this.config.worldWidth - Boid.BORDER_BUFFER)) / Boid.BORDER_BUFFER;
+      force.x = -strength * Boid.BORDER_AVOIDANCE_FORCE;
+    }
+
+    return force;
   }
 
   // private checkSharkCollision(shark: Shark): void {
@@ -386,8 +402,9 @@ export class Boid {
     const separation = this.separation(nearby.separation);
     const collisionAvoidance = this.avoidCollisions(nearby.collision);
     const sharkAvoidance = this.avoidShark();
-    const topHalfPreference = this.preferTopHalf();
+    const topHalfPreference = this.preferMiddle();
     const waterAvoidance = this.avoidWaterSurface();
+    const borderAvoidance = this.avoidBorders();
 
     // Apply forces with different weights
     this.sprite.body.velocity.add(alignment.scale(3)); // Alignment is most important
@@ -397,6 +414,7 @@ export class Boid {
     this.sprite.body.velocity.add(sharkAvoidance.scale(2));
     this.sprite.body.velocity.add(topHalfPreference.scale(1)); // Gentle preference for top half
     this.sprite.body.velocity.add(waterAvoidance.scale(3)); // Strong water avoidance
+    this.sprite.body.velocity.add(borderAvoidance.scale(2)); // Border avoidance
 
     // Limit the maximum speed
     const currentSpeed = this.sprite.body.velocity.length();
