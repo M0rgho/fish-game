@@ -23,13 +23,20 @@ export class FishBoneManager {
     const sprite = boid.getSprite();
     const fishBone = this.fishBonesBodies.create(sprite.x, sprite.y, 'fish-bone');
 
-    fishBone.setScale(0.05);
     fishBone.setAlpha(Phaser.Math.FloatBetween(0.5, 0.8));
     fishBone.setScale(boid.size / 360 / 2);
+    fishBone.setOrigin(0.5, 0.5);
+
+    const displayRadius = fishBone.displayWidth * 0.4;
+
+    fishBone.setCircle(
+      displayRadius,
+      fishBone.displayWidth / 2 - displayRadius,
+      fishBone.displayHeight / 2 - displayRadius
+    );
     fishBone.setVelocity(sprite.body.velocity.x * 0.5, sprite.body.velocity.y * 0.5);
     fishBone.setAngularVelocity(10);
     fishBone.setDepth(-0.21);
-    fishBone.setCircle((fishBone.width / 2) * 0.8);
 
     const angle = Math.atan2(fishBone.body.velocity.y, fishBone.body.velocity.x);
     fishBone.setRotation(angle);
