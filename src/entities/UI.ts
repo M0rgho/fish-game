@@ -29,6 +29,8 @@ export class UI {
   private timeText: Phaser.GameObjects.Text;
   private sharkInteractionCheckbox: Phaser.GameObjects.Rectangle;
   private sharkInteractionText: Phaser.GameObjects.Text;
+  private blendModeText: Phaser.GameObjects.Text;
+  private currentBlendMode: number = Phaser.BlendModes.DARKEN;
   public isPaused: boolean = true;
   private escapeKey: Phaser.Input.Keyboard.Key;
   private isFirstStart: boolean = true;
@@ -348,14 +350,29 @@ export class UI {
     const checkboxSize = 24;
     const spacing = 40;
     const bottomMargin = 50;
-    const totalHeight = spacing * (this.debugCheckboxes.length + 1); // +1 for future checkboxes
+    const totalHeight = spacing * (this.debugCheckboxes.length + 2); // +2 for future checkboxes and blend mode text
     const baseY = this.config.windowHeight / 2 - bottomMargin - totalHeight;
+
+    // Create blend mode text
+    this.blendModeText = this.scene.add.text(
+      -this.config.windowWidth / 2 + 50,
+      baseY,
+      'Blend Mode: ' + 'MULTIPLY',
+      {
+        fontSize: '24px',
+        color: '#ffffff',
+      }
+    );
+    this.blendModeText.setOrigin(0, 0.5);
+    this.blendModeText.setScrollFactor(0);
+    this.blendModeText.setVisible(false);
+    this.mainContainer.add(this.blendModeText);
 
     // Create shark interaction checkbox
     const sharkCheckbox = new DebugCheckbox(
       this.scene,
       -this.config.windowWidth / 2 + 50,
-      baseY,
+      baseY + spacing,
       checkboxSize,
       'Disable Shark Interaction',
       () => {
@@ -371,7 +388,7 @@ export class UI {
     const staminaCheckbox = new DebugCheckbox(
       this.scene,
       -this.config.windowWidth / 2 + 50,
-      baseY + spacing,
+      baseY + spacing * 2,
       checkboxSize,
       'Infinite Stamina',
       () => {
@@ -484,12 +501,44 @@ export class UI {
         this.debugInput = '';
         this.updateDebugElementsVisibility();
       }
+
+      // Handle blend mode cycling with 'B' key when in debug mode
+      if (event.key.toLowerCase() === 'b' && this.debugMode) {
+        this.cycleBlendMode();
+      }
     });
+  }
+
+  private cycleBlendMode() {
+    // Only use WebGL supported blend modes
+    const webglBlendModes = [
+      Phaser.BlendModes.NORMAL,
+      Phaser.BlendModes.ADD,
+      Phaser.BlendModes.MULTIPLY,
+      Phaser.BlendModes.SCREEN,
+      Phaser.BlendModes.ERASE,
+    ];
+
+    const currentIndex = webglBlendModes.indexOf(this.currentBlendMode);
+    const nextIndex = (currentIndex + 1) % webglBlendModes.length;
+    this.currentBlendMode = webglBlendModes[nextIndex];
+
+    const blendModeName = Object.keys(Phaser.BlendModes).find(
+      (key) => Phaser.BlendModes[key as keyof typeof Phaser.BlendModes] === this.currentBlendMode
+    );
+
+    const backgroundGraphics = this.scene.environment.getBackgroundGraphics();
+    if (backgroundGraphics) {
+      backgroundGraphics.setBlendMode(this.currentBlendMode);
+    }
+
+    this.blendModeText.setText('Blend Mode: ' + blendModeName);
   }
 
   private updateDebugElementsVisibility(): void {
     const isVisible = this.debugMode;
     this.debugCheckboxes.forEach((checkbox) => checkbox.setVisible(isVisible));
+    this.blendModeText.setVisible(isVisible);
   }
 }
 
