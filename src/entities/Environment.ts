@@ -42,10 +42,10 @@ export class Environment {
       0x87ceeb,
       0x00001b,
       0x00001b,
-      0.3,
-      0.3,
-      0.9,
-      0.9
+      0.2,
+      0.2,
+      0.99,
+      0.99
     );
 
     // Fill the rectangle with the gradient
@@ -326,7 +326,6 @@ export class Environment {
 
   createSmallKelp(midX: number, midY: number) {
     const scale = Phaser.Math.FloatBetween(0.05, 0.7);
-    console.log('createSmallKelp');
     const kelp = this.scene.physics.add.image(midX, midY - 140 * scale, 'kelp-2');
     kelp.setScale(scale);
     kelp.setDepth(-0.1);
