@@ -45,7 +45,7 @@ export class Shark {
     this.sprite.setBounce(0.2);
     this.sprite.debugShowVelocity = true;
     this.sprite.setTintFill(0x232323);
-    this.sprite.setAlpha(0.9);
+    this.sprite.setAlpha(0.95);
     this.sprite.setMaxVelocity(this.MAX_SPEED);
 
     // Initialize scale and speed

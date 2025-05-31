@@ -54,13 +54,12 @@ export class Boid {
 
     group.add(this.sprite);
 
-    // Generate random bright RGB values between 80-150 for a muted color
-    const r = Phaser.Math.Between(80, 150);
-    const g = Phaser.Math.Between(80, 150);
-    const b = Phaser.Math.Between(80, 150);
+    const r = Phaser.Math.Between(120, 200);
+    const g = Phaser.Math.Between(120, 200);
+    const b = Phaser.Math.Between(120, 200);
     const color = Phaser.Display.Color.GetColor(r, g, b);
     this.sprite.setTintFill(color);
-    this.sprite.setAlpha(0.9);
+    this.sprite.setAlpha(0.99);
 
     // Set up physics body
     this.sprite.setCircle(this.sprite.width / 2);
