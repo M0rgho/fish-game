@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+<svg xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" version="1.1" width="400" height="1600" viewBox="0 0 800 1600" id="Layer_1" xml:space="preserve">
+    <metadata id="metadata10">
+        <rdf:RDF>
+            <cc:Work rdf:about="">
+                <dc:format>image/svg+xml</dc:format>
+                <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+                <dc:title/>
+            </cc:Work>
+        </rdf:RDF>
+    </metadata>
+    <defs id="defs8"/>
+    <!-- Main kelp stem -->
+    <path d="M200,0 C260,120 140,240 220,360 C300,480 100,600 180,720 C260,840 140,960 220,1080 C300,1200 100,1320 180,1440 C260,1560 140,1600 200,1600 C260,1560 140,1440 180,1320 C260,1200 140,1080 220,960 C300,840 140,720 180,600 C260,480 140,360 220,240 C300,120 140,0 200,0 Z" 
+          fill="#00331A" 
+          stroke="#1a3d17" 
+          stroke-width="8" />  
+    
+    <!-- Asymmetrical leaves -->
+    <path d="M200,200 C140,160 100,240 140,320 C180,400 100,480 140,560" 
+          fill="none" 
+          stroke="#00331A" 
+          stroke-width="8" />
+    <path d="M200,480 C280,440 340,520 300,600 C260,680 340,760 300,840" 
+          fill="none" 
+          stroke="#00331A" 
+          stroke-width="8" />
+    <path d="M200,720 C120,680 60,760 100,840 C140,920 60,1000 100,1080" 
+          fill="none" 
+          stroke="#00331A" 
+          stroke-width="8" />
+    <path d="M200,1000 C260,960 320,1040 280,1120 C240,1200 320,1280 280,1360" 
+          fill="none" 
+          stroke="#00331A" 
+          stroke-width="8" />
+    <path d="M200,1200 C140,1160 80,1240 120,1320 C160,1400 80,1480 120,1560" 
+          fill="none" 
+          stroke="#00331A" 
+          stroke-width="8" />
+    <path d="M200,1400 C280,1360 340,1440 300,1520 C260,1560 200,1540 200,1400" 
+          fill="none" 
+          stroke="#00331A" 
+          stroke-width="8" />
+</svg>

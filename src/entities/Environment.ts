@@ -15,8 +15,10 @@ export class Environment {
   private readonly SURFACE_AMPLITUDE = 10;
   private readonly SURFACE_FREQUENCY = 0.02;
   private readonly SURFACE_SPEED = 0.01;
+  private backgroundGraphics: Phaser.GameObjects.Graphics;
 
-  private readonly KELP_DENSITY = 0.2;
+  private readonly KELP_DENSITY = 0.15;
+  private readonly LARGE_KELP_DENSITY = 0.3;
   private readonly CORAL_DENSITY = 0.3;
   private readonly JELLYFISH_COUNT = 100;
 
@@ -25,12 +27,36 @@ export class Environment {
     this.config = config;
 
     this.createBackground();
-    // add second background layer to get squared color effect
-    // const bg2 = this.createBackground();
-    // bg2.setAlpha(0.7);
-
     this.createGround();
     this.createSurfaceLine();
+  }
+
+  private createBackground() {
+    this.backgroundGraphics = this.scene.add.graphics();
+
+    this.backgroundGraphics.fillGradientStyle(
+      0x87ceeb,
+      0x87ceeb,
+      0x00001b,
+      0x00001b,
+      0.3,
+      0.3,
+      0.9,
+      0.9
+    );
+
+    // Fill the rectangle with the gradient
+    this.backgroundGraphics.fillRect(0, 0, this.config.worldWidth, this.config.worldHeight);
+
+    // Set blend mode for better visual effect
+    this.backgroundGraphics.setBlendMode(Phaser.BlendModes.MULTIPLY);
+    this.backgroundGraphics.setDepth(1.5);
+
+    return this.backgroundGraphics;
+  }
+
+  public getBackgroundGraphics(): Phaser.GameObjects.Graphics {
+    return this.backgroundGraphics;
   }
 
   private createGround() {
@@ -101,23 +127,13 @@ export class Environment {
 
       // Create kelp
       if (Math.random() < this.KELP_DENSITY) {
-        const maxAllowedScale = Math.min(
-          (this.config.worldHeight -
-            this.config.surface.height -
-            this.config.ground.baseHeight -
-            200) /
-            1600,
-          8
-        );
-        const scale = Phaser.Math.Between(1, maxAllowedScale);
-        const kelp = this.scene.physics.add.image(midX, midY - 350 * scale, 'kelp');
-        kelp.setScale(scale);
-        kelp.setDepth(-10);
-        kelp.setTintFill(0x00331a);
-        kelp.setAlpha(Phaser.Math.Between(0.5, 1));
-        if (Math.random() < 0.5) {
-          kelp.setFlipX(true);
+        if (Math.random() < this.LARGE_KELP_DENSITY) {
+          this.createLargeKelp(midX, midY);
+        } else {
+          this.createSmallKelp(midX, midY);
         }
+        // prevent kelp from being created to densely
+        i++;
       }
     }
     graphics.setDepth(1.3);
@@ -129,22 +145,6 @@ export class Environment {
 
   private createSurfaceLine() {
     this.surfaceLine = this.scene.add.graphics();
-  }
-
-  private createBackground() {
-    const graphics = this.scene.add.graphics();
-
-    // Create gradient fill using Phaser's fillGradientStyle
-    graphics.fillGradientStyle(0x87ceeb, 0x87ceeb, 0x00001b, 0x00001b, 0.3, 0.3, 0.95, 0.95);
-
-    // Fill the rectangle with the gradient
-    graphics.fillRect(0, 0, this.config.worldWidth, this.config.worldHeight);
-
-    // Set blend mode for better visual effect
-    graphics.setBlendMode(Phaser.BlendModes.MULTIPLY);
-    graphics.setDepth(1.5);
-
-    return graphics;
   }
 
   private updateSurfaceLine() {
@@ -215,7 +215,6 @@ export class Environment {
 
   public update() {
     this.updateSurfaceLine();
-    this.updateCorals();
     this.jellyfish.forEach((jellyfish) => jellyfish.update());
   }
 
@@ -225,9 +224,23 @@ export class Environment {
       if (Math.random() > this.CORAL_DENSITY) continue;
       const scale = Phaser.Math.FloatBetween(0.03, 0.07);
       const coral = this.scene.physics.add.staticImage(point.x, point.y - 800 * scale, 'coral');
-      coral.setRotation(Phaser.Math.FloatBetween(-0.2, 0.2));
       coral.setScale(scale);
+      coral.setOrigin(0.5, 1);
+      coral.y += coral.height * scale * 0.5;
+
       coral.setTintFill(Phaser.Math.Between(0xbd684a, 0xedb9ad));
+      coral.setRotation(Phaser.Math.FloatBetween(-0.2, 0.2));
+
+      // Add wave-like motion to coral around bottom center pivot
+      this.scene.tweens.add({
+        targets: coral,
+        rotation: coral.rotation + Phaser.Math.FloatBetween(-0.2, 0.2),
+        duration: 2000 + Math.random() * 1000,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut',
+      });
+
       this.corals.push(coral);
     }
   }
@@ -252,9 +265,81 @@ export class Environment {
     }
   }
 
-  private updateCorals() {
-    this.corals.forEach((coral, index) => {
-      coral.setRotation(Math.sin(this.surfaceTime + Math.cos(index * 20)) * 0.2);
+  private createLargeKelp(midX: number, midY: number) {
+    const maxAllowedScale = Math.min(
+      (this.config.worldHeight - this.config.surface.height - this.config.ground.baseHeight - 200) /
+        1200,
+      4
+    );
+
+    const scale = Phaser.Math.Between(1, maxAllowedScale);
+
+    const kelp = this.scene.physics.add.image(midX, midY - 300 * scale, 'kelp');
+    kelp.setScale(scale);
+    kelp.setDepth(-0.1);
+    // Add wave-like motion to kelp while keeping bottom anchored
+    const kelpHeight = kelp.height * scale;
+    kelp.setOrigin(0.5, 1);
+    kelp.y += kelpHeight / 2;
+    this.scene.tweens.add({
+      targets: kelp,
+      scaleY: scale * 1.03,
+      duration: 2000 + Math.random() * 1000,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
     });
+
+    // Add slight delay to create wave effect
+    this.scene.tweens.add({
+      targets: kelp,
+      rotation: 0.05,
+      delay: Math.random() * 500,
+      duration: 3000 + Math.random() * 1000,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+    });
+    // kelp.setTintFill(0x00331a);
+    kelp.setAlpha(Phaser.Math.FloatBetween(0.3, 0.8));
+    if (Math.random() < 0.5) {
+      kelp.setFlipX(true);
+    }
+  }
+
+  createSmallKelp(midX: number, midY: number) {
+    const scale = Phaser.Math.FloatBetween(0.05, 0.7);
+    console.log('createSmallKelp');
+    const kelp = this.scene.physics.add.image(midX, midY - 140 * scale, 'kelp-2');
+    kelp.setScale(scale);
+    kelp.setDepth(-0.1);
+    // Add wave-like motion to kelp while keeping bottom anchored
+    const kelpHeight = kelp.height * scale;
+    kelp.setOrigin(0.5, 1);
+    kelp.y += kelpHeight / 2;
+    this.scene.tweens.add({
+      targets: kelp,
+      scaleY: scale * 1.03,
+      duration: 2000 + Math.random() * 1000,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+    });
+
+    // Add slight delay to create wave effect
+    this.scene.tweens.add({
+      targets: kelp,
+      rotation: 0.05,
+      delay: Math.random() * 500,
+      duration: 3000 + Math.random() * 1000,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+    });
+    kelp.setDepth(0.1);
+    kelp.setAlpha(Phaser.Math.FloatBetween(0.8, 0.95));
+    if (Math.random() < 0.5) {
+      kelp.setFlipX(true);
+    }
   }
 }
