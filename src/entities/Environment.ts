@@ -21,6 +21,9 @@ export class Environment {
   private readonly LARGE_KELP_DENSITY = 0.3;
   private readonly CORAL_DENSITY = 0.3;
   private readonly JELLYFISH_COUNT = 100;
+  private readonly MIN_KELP_CORAL_DISTANCE = 40;
+
+  private kelpPositions: { x: number; y: number }[] = [];
 
   constructor(scene: Phaser.Scene, config: typeof GameConfig) {
     this.scene = scene;
@@ -132,7 +135,9 @@ export class Environment {
         } else {
           this.createSmallKelp(midX, midY);
         }
-        // prevent kelp from being created to densely
+        // Store kelp position for coral placement check
+        this.kelpPositions.push({ x: midX, y: midY });
+        // prevent kelp from being created too densely
         i++;
       }
     }
@@ -218,10 +223,22 @@ export class Environment {
     this.jellyfish.forEach((jellyfish) => jellyfish.update());
   }
 
+  private hasNearbyKelp(x: number, y: number): boolean {
+    return this.kelpPositions.some((kelp) => {
+      const dx = kelp.x - x;
+      const dy = kelp.y - y;
+      return dx * dx + dy * dy < this.MIN_KELP_CORAL_DISTANCE * this.MIN_KELP_CORAL_DISTANCE;
+    });
+  }
+
   private createCorals(points: Phaser.Math.Vector2[]) {
     this.corals = [];
     for (const point of points) {
       if (Math.random() > this.CORAL_DENSITY) continue;
+
+      // Skip if there's kelp nearby
+      if (this.hasNearbyKelp(point.x, point.y)) continue;
+
       const scale = Phaser.Math.FloatBetween(0.03, 0.07);
       const coral = this.scene.physics.add.staticImage(point.x, point.y - 800 * scale, 'coral');
       coral.setScale(scale);
