@@ -3,13 +3,18 @@ A simple underwater game where you play as a shark swimming through a procedural
 
 ![screenshot](./images/screenshot.png)
 
+## Game specification
+
+The game takes place in an ocean, where fish continuously respawn each time they're eaten by a shark. Your goal is to eat 500 fish as quickly as possible. The size of the world is dynamic and adapts to the window size.
+
 ### Features:
-- Dynamic fish AI with flocking behavior
+- Dynamic fish AI with boid flocking behavior
 - Procedurally generated terrain with rocks, kelp, and coral
 - Water surface effects
 - Physics-based movement and collisions
 - Ambient jellyfishes
 - Atmospheric underwater environment with depth gradients and particle effects
+- Smooth camera movement
 
 ### Controls:
 - Move arrow keys
@@ -33,5 +38,12 @@ npm install
 ```
 npm run dev
 ```
+
+## Technologies used
+- Typescript
+- Phaser.js 3
+- Simplex-noise
+- Custom QuadTree implementation 
+
 ---
 Mikołaj Maślak, Szymon Głomski
